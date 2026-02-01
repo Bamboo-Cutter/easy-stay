@@ -17,7 +17,7 @@
 
 ---
 
-## 目录结构（重要）
+## 目录结构
 
 ```
 
@@ -125,24 +125,6 @@ pnpm prisma studio
 
 按终端提示打开浏览器地址即可查看表结构与数据。
 
----
-
-## 常见问题（Troubleshooting）
-
-### 1）端口冲突（3000 或 5432）
-
-* 3000：后端服务端口
-* 5432：PostgreSQL 端口（Docker 映射）
-
-若冲突，请先停止占用进程或修改端口映射与配置。
-
-### 2）Prisma 迁移后看不到表
-
-请确认：
-
-* Docker 数据库容器已启动：`docker ps`
-* `.env` 的 `DATABASE_URL` 配置正确
-* 已执行：`pnpm prisma migrate dev`
 
 ---
 
@@ -151,17 +133,10 @@ pnpm prisma studio
 * 本仓库采用分支开发方式
 * 后端初始化与主要开发在分支（例如 `backend-init`）上进行
 
----
 
-## 备注
+# API
 
-* 本仓库为课程项目后端部分
-* 前端不在此仓库范围内
-
-
-
-
-0. 基本信息
+### 0. 基本信息
 
 Base URL：http://localhost:3000
 
@@ -173,8 +148,8 @@ Base URL：http://localhost:3000
 
 返回格式：JSON
 
-1. 健康检查 Health
-1.1 GET /health
+### 1. 健康检查 Health
+#### 1.1 GET /health
 
 说明：用于确认服务存活
 
@@ -191,13 +166,12 @@ Base URL：http://localhost:3000
 
 200 OK：服务正常
 
-404 Not Found：路由没挂上/模块没导入（你现在已 OK）
+404 Not Found：路由没挂上/模块没导入
 
-2. 认证 Auth
+### 2. 认证 Auth
 
-你现在已经在写 auth.module / controller / service / jwt.strategy / dto 这套，所以文档按标准 JWT 登录注册来写。
 
-2.1 POST /auth/register
+#### 2.1 POST /auth/register
 
 说明：注册用户（默认注册普通用户/或按你业务决定 role）
 
@@ -237,9 +211,9 @@ password：必填，建议 MinLength(6/8)
 
 400 Bad Request：字段不合法 / 多余字段（forbidNonWhitelisted）
 
-409 Conflict 或 400：邮箱已存在（你代码里现在是 BadRequestException 也可以）
+409 Conflict 或 400：邮箱已存在
 
-2.2 POST /auth/login
+#### 2.2 POST /auth/login
 
 说明：邮箱密码登录，返回 JWT
 
@@ -266,7 +240,7 @@ Body
 
 401 Unauthorized：邮箱不存在 / 密码错误（建议不要区分具体原因）
 
-2.3 GET /auth/me（可选但强烈建议你今天就补上）
+#### 2.3 GET /auth/me
 
 说明：验证 token 是否生效，返回当前用户信息
 
@@ -287,7 +261,7 @@ Authorization: Bearer <token>
 
 401 Unauthorized：没带 token / token 无效 / 过期
 
-3. 环境变量（你 auth.module 里已经在读 config）
+### 3. 环境变量
 
 建议 .env 至少有：
 
