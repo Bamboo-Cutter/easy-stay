@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum user_role {
+  MERCHANT
+  ADMIN
+}
+
+enum hotel_status {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  OFFLINE
+}
+
+model users {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String
+  role       user_role
+  created_at DateTime @default(now())
+
+  hotels     hotels[]
+}
+
+model hotels {
+  id             String       @id @default(cuid())
+  name_cn        String
+  name_en        String?
+  address        String
+  city           String
+  star           Int
+  type           String
+  open_year      Int
+  status         hotel_status @default(DRAFT)
+  reject_reason  String?
+
+  merchant_id    String
+  merchant       users        @relation(fields: [merchant_id], references: [id])
+
+  hotel_images   hotel_images[]
+  hotel_tags     hotel_tags[]
+  rooms          rooms[]
+  nearby_points  nearby_points[]
+  review_summary review_summary?
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@index([city])
+  @@index([merchant_id])
+}
+
+model hotel_images {
+  id       String @id @default(cuid())
+  hotel_id String
+  url      String
+  sort     Int    @default(0)
+
+  hotel    hotels @relation(fields: [hotel_id], references: [id])
+
+  @@index([hotel_id])
+}
+
+model hotel_tags {
+  id       String @id @default(cuid())
+  hotel_id String
+  tag      String
+
+  hotel    hotels @relation(fields: [hotel_id], references: [id])
+
+  @@unique([hotel_id, tag])
+  @@index([hotel_id])
+}
+
+model rooms {
+  id            String  @id @default(cuid())
+  hotel_id      String
+  name          String
+  capacity      Int
+  base_price    Int
+  refundable    Boolean @default(false)
+  breakfast     Boolean @default(false)
+
+  hotel         hotels  @relation(fields: [hotel_id], references: [id])
+  price_calendar price_calendar[]
+
+  @@index([hotel_id])
+}
+
+model price_calendar {
+  id          String  @id @default(cuid())
+  room_id     String
+  date        DateTime
+  price       Int
+  promo_type  String?
+  promo_value Int?
+
+  room        rooms   @relation(fields: [room_id], references: [id])
+
+  @@unique([room_id, date])
+  @@index([date])
+}
+
+model nearby_points {
+  id          String  @id @default(cuid())
+  hotel_id    String
+  type        String
+  name        String
+  distance_km Float?
+
+  hotel       hotels  @relation(fields: [hotel_id], references: [id])
+
+  @@index([hotel_id])
+}
+
+model review_summary {
+  id           String @id @default(cuid())
+  hotel_id     String @unique
+  rating       Float  @default(0)
+  review_count Int    @default(0)
+
+  hotel        hotels @relation(fields: [hotel_id], references: [id])
+}

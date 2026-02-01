@@ -1,0 +1,83 @@
+{
+    "info": {
+      "name": "easy-stay-hotel backend (local)",
+      "_postman_id": "b3d6c1a9-2e27-4a08-9f3b-9b9f2d7e9b1a",
+      "description": "Local API tests for NestJS backend (health + auth). Set env var baseUrl=http://localhost:3000",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Health - GET /health",
+        "request": {
+          "method": "GET",
+          "header": [],
+          "url": {
+            "raw": "{{baseUrl}}/health",
+            "host": ["{{baseUrl}}"],
+            "path": ["health"]
+          }
+        }
+      },
+      {
+        "name": "Auth - POST /auth/register",
+        "request": {
+          "method": "POST",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"test1@demo.com\",\n  \"password\": \"12345678\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/auth/register",
+            "host": ["{{baseUrl}}"],
+            "path": ["auth", "register"]
+          }
+        }
+      },
+      {
+        "name": "Auth - POST /auth/login",
+        "request": {
+          "method": "POST",
+          "header": [{ "key": "Content-Type", "value": "application/json" }],
+          "body": {
+            "mode": "raw",
+            "raw": "{\n  \"email\": \"test1@demo.com\",\n  \"password\": \"12345678\"\n}"
+          },
+          "url": {
+            "raw": "{{baseUrl}}/auth/login",
+            "host": ["{{baseUrl}}"],
+            "path": ["auth", "login"]
+          }
+        },
+        "event": [
+          {
+            "listen": "test",
+            "script": {
+              "exec": [
+                "try {",
+                "  const json = pm.response.json();",
+                "  if (json?.access_token) {",
+                "    pm.environment.set('token', json.access_token);",
+                "  }",
+                "} catch (e) {}"
+              ],
+              "type": "text/javascript"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Auth - GET /auth/me (Bearer)",
+        "request": {
+          "method": "GET",
+          "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+          "url": {
+            "raw": "{{baseUrl}}/auth/me",
+            "host": ["{{baseUrl}}"],
+            "path": ["auth", "me"]
+          }
+        }
+      }
+    ]
+  }
+  
