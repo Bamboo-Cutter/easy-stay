@@ -1,7 +1,7 @@
 
 # Easy-Stay Hotel Backend (NestJS + Prisma + PostgreSQL)
 
-这是 Easy-Stay Hotel 项目的**后端服务**（前端由其他同学维护）。
+这是 Easy-Stay Hotel 项目
 后端采用 **NestJS + Prisma + PostgreSQL(Docker)**，并提供基础的 **Health Check**、**注册/登录** API。
 
 ---
