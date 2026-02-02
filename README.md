@@ -1,272 +1,256 @@
 
+# Easy-Stay Hotel Backend (NestJS + Prisma + PostgreSQL)
 
-
-# Easy-Stay Hotel 后端（Backend Only）
-
-本仓库仅包含 **后端服务**（NestJS + Prisma + PostgreSQL）。  
-
----
-
-## 技术栈
-
-- **Node.js + TypeScript**
-- **NestJS**（后端框架）
-- **Prisma ORM**（数据库映射与迁移）
-- **PostgreSQL**（使用 Docker Compose 本地启动）
-- **pnpm**（包管理器）
+这是 Easy-Stay Hotel 项目的**后端服务**（前端由其他同学维护）。
+后端采用 **NestJS + Prisma + PostgreSQL(Docker)**，并提供基础的 **Health Check**、**注册/登录** API。
 
 ---
 
-## 目录结构
+## 1. 技术栈
 
-```
-
-.
-├── docker-compose.yml          # 本地 PostgreSQL（Docker）
-└── apps
-└── api                     # NestJS 后端服务
-├── prisma
-│   ├── schema.prisma   # 数据库 Schema（Prisma）
-│   └── migrations      # 迁移历史（必须提交）
-└── src                 # NestJS 源码
-
-````
-
-说明：
-- `apps/api/prisma/`：Prisma 的 schema 与 migrations（数据库结构定义与迁移历史）
-- `apps/api/src/prisma/`：NestJS 的 PrismaModule/PrismaService（依赖注入用）
+* **Node.js**：建议 `v22.x`（不要用 v25，会遇到 ESM/CJS 依赖问题）
+* **NestJS**：后端框架
+* **Prisma**：ORM + Migration + Seed
+* **PostgreSQL 16**：Docker 运行
+* **pnpm**：包管理器
 
 ---
 
-## 环境要求
-
-- 已安装 **Node.js**
-- 已安装 **pnpm**
-- 已安装并打开 **Docker Desktop**
-
----
-
-## 快速启动（本地开发）
-
-### 1）启动数据库（PostgreSQL）
-在仓库根目录执行：
+## 2. 项目结构
 
 ```bash
-docker compose up -d
-````
-
-检查容器状态（可选）：
-
-```bash
-docker ps
+easy-stay-hotel/
+  apps/
+    api/                         # NestJS 后端
+      prisma/
+        schema.prisma
+        migrations/
+        seed.ts
+      src/
+        auth/
+        health/
+        prisma/
+        main.ts
+        app.module.ts
+      .env.example
+      package.json
+    easy-stay-api.postman_collection.json  # Postman collection
+  docker-compose.yml
+  er.png
+  README.md
 ```
 
-### 2）安装后端依赖
+---
 
-进入后端目录：
+## 3. 本地启动（推荐流程）
+
+### 3.1 前置要求
+
+* Node.js >= 22
+* pnpm >= 10
+* Docker Desktop
+
+检查版本：
+
+```bash
+node -v
+pnpm -v
+docker -v
+```
+
+---
+
+### 3.2 安装依赖
+
+进入后端目录安装：
 
 ```bash
 cd apps/api
 pnpm install
 ```
 
-> 如果 pnpm 提示 build scripts 被忽略（例如 prisma/bcrypt），请执行：
->
-> ```bash
-> pnpm approve-builds
-> pnpm prisma generate
-> ```
+---
 
-### 3）配置环境变量
+### 3.3 启动数据库（Docker）
 
-在 `apps/api` 下创建 `.env`（参考 `.env.example`）：
-
-```env
-DATABASE_URL="postgresql://hotel:hotel123@localhost:5432/hotel_booking?schema=public"
-JWT_SECRET="replace_me"
-```
-
-说明：
-
-* `.env` 不应提交到 GitHub
-* `.env.example` 可提交作为示例
-
-### 4）应用数据库迁移（建表）
-
-在 `apps/api` 目录执行：
+在项目根目录（有 `docker-compose.yml` 的地方）执行：
 
 ```bash
-pnpm prisma migrate dev
-pnpm prisma generate
+cd ../../
+docker compose up -d
+docker ps
 ```
 
-### 5）启动后端服务（开发模式）
+确认 `postgres` 容器正常运行且端口 `5432` 映射出来。
+
+---
+
+### 3.4 配置环境变量
+
+复制配置：
+
+```bash
+cd apps/api
+cp .env.example .env
+```
+
+`.env` 内容：
+```
+DATABASE_URL="postgresql://hotel:hotel123@localhost:5432/hotel_booking?schema=public"
+JWT_SECRET="dev_secret_change_me"
+JWT_EXPIRES_IN="7d"
+```
+
+
+---
+
+### 3.5 Prisma Migration + 生成 Client
+
+在 `apps/api` 下执行：
+
+```bash
+pnpm prisma generate
+pnpm prisma migrate dev
+```
+
+---
+
+### 3.6 数据初始化（Seed）
+
+```bash
+pnpm prisma db seed
+```
+
+> Seed 脚本位置：`apps/api/prisma/seed.ts`
+
+---
+
+### 3.7 启动服务
 
 ```bash
 pnpm start:dev
 ```
 
----
-
-## 接口验证
-
-* 健康检查（如已实现）：
-  `http://localhost:3000/health`
+默认端口：`http://localhost:3000`
 
 ---
 
-## Prisma Studio（可视化查看数据库）
+## 4. 健康检查
 
-在 `apps/api` 目录执行：
+浏览器/命令行测试：
 
 ```bash
-pnpm prisma studio
+curl http://localhost:3000/health
 ```
 
-按终端提示打开浏览器地址即可查看表结构与数据。
+成功时会返回类似：
+
+```json
+{ "ok": true }
+```
+
+---
+
+# 5. API 文档（当前实现）
+
+## 5.1 Base URL
+
+本地开发：
+
+```
+http://localhost:3000
+```
+
+---
+
+## 5.2 认证方式
+
+使用 **JWT Bearer Token**
+
+请求头：
+
+```
+Authorization: Bearer <token>
+```
+
+---
+
+## 5.3 Health
+
+### ✅ GET `/health`
+
+**用途**：确认服务是否启动成功
+
+* Method: `GET`
+* Auth: 无
+* Response (示例)：
+
+```json
+{ "ok": true }
+```
+
+---
+
+## 5.4 Auth
+
+### ✅ POST `/auth/register`
+
+**用途**：注册账号
+
+* Method: `POST`
+* Auth: 无
+* Body (JSON)（示例，按你的 DTO 字段来）：
+
+```json
+{
+  "email": "test@example.com",
+  "password": "123456"
+}
+```
+
+* Response (示例)：
+
+```json
+{
+  "id": "xxx",
+  "email": "test@example.com",
+  "role": "MERCHANT",
+  "createdAt": "2026-02-02T..."
+}
+```
 
 
 ---
 
-## Git 分支说明
+### ✅ POST `/auth/login`
 
-* 本仓库采用分支开发方式
-* 后端初始化与主要开发在分支（例如 `backend-init`）上进行
+**用途**：登录并获取 token
 
+* Method: `POST`
+* Auth: 无
+* Body (JSON)：
 
-# API
-
-### 0. 基本信息
-
-Base URL：http://localhost:3000
-
-数据库：Docker Postgres（你容器名 easy_stay_db，5432 映射）
-
-校验：全局 ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true })
-
-多传字段会 400（这是预期行为）
-
-返回格式：JSON
-
-### 1. 健康检查 Health
-#### 1.1 GET /health
-
-说明：用于确认服务存活
-
-请求
-
-无参数
-
-响应示例（可能）
-
-{ "ok": true }
-
-
-常见状态码
-
-200 OK：服务正常
-
-404 Not Found：路由没挂上/模块没导入
-
-### 2. 认证 Auth
-
-
-#### 2.1 POST /auth/register
-
-说明：注册用户（默认注册普通用户/或按你业务决定 role）
-
-Headers
-
-Content-Type: application/json
-
-Body
-
+```json
 {
-  "email": "test1@demo.com",
-  "password": "12345678"
+  "email": "test@example.com",
+  "password": "123456"
 }
+```
 
+* Response (示例)：
 
-校验规则（建议）
-
-email：必填，合法邮箱
-
-password：必填，建议 MinLength(6/8)
-
-成功响应（示例）
-
-常见两种做法：
-
-返回用户信息（不含密码）
-
-{ "id": "xxx", "email": "test1@demo.com", "role": "MERCHANT", "created_at": "..." }
-
-
-直接返回 token（注册即登录）
-
-{ "access_token": "..." }
-
-
-失败响应
-
-400 Bad Request：字段不合法 / 多余字段（forbidNonWhitelisted）
-
-409 Conflict 或 400：邮箱已存在
-
-#### 2.2 POST /auth/login
-
-说明：邮箱密码登录，返回 JWT
-
-Headers
-
-Content-Type: application/json
-
-Body
-
+```json
 {
-  "email": "test1@demo.com",
-  "password": "12345678"
+  "accessToken": "xxxxx.yyyyy.zzzzz"
 }
+```
+
+---
+
+###  GET `/auth/me`
 
 
-成功响应（建议统一）
-
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
 
 
-失败响应
-
-401 Unauthorized：邮箱不存在 / 密码错误（建议不要区分具体原因）
-
-#### 2.3 GET /auth/me
-
-说明：验证 token 是否生效，返回当前用户信息
-
-Headers
-
-Authorization: Bearer <token>
-
-成功响应（示例）
-
-{
-  "id": "xxx",
-  "email": "test1@demo.com",
-  "role": "MERCHANT"
-}
 
 
-失败响应
-
-401 Unauthorized：没带 token / token 无效 / 过期
-
-### 3. 环境变量
-
-建议 .env 至少有：
-
-DATABASE_URL=postgresql://...
-
-JWT_SECRET=dev_secret_change_me
-
-JWT_EXPIRES_IN=1d（或 3600，但要和你 JwtModule 的类型一致）
