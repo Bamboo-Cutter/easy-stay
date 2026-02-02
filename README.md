@@ -217,6 +217,12 @@ Authorization: Bearer <token>
   "role": "MERCHANT",
   "createdAt": "2026-02-02T..."
 }
+or
+{
+    "message": "邮箱已注册",
+    "error": "Bad Request",
+    "statusCode": 400
+}
 ```
 
 
@@ -241,14 +247,29 @@ Authorization: Bearer <token>
 
 ```json
 {
-  "accessToken": "xxxxx.yyyyy.zzzzz"
-}
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjbWwzb3Z4a3YwMDAwcXZ1Y3Q3NzljN2VtIiwicm9sZSI6Ik1FUkNIQU5UIiwiZW1haWwiOiJ0ZXN0MUBkZW1vLmNvbSIsImlhdCI6MTc3MDAwNzI2MSwiZXhwIjoxNzcwNjEyMDYxfQ.yQm5ywDIuYZP5-RYUnIE5A8bw_a7LBEOWMxNOXxXXoQ",
+    "user": {
+        "id": "cml3ovxkv0000qvuct779c7em",
+        "email": "test1@demo.com",
+        "role": "MERCHANT"
+   
 ```
 
 ---
 
 ###  GET `/auth/me`
 
+* Response (示例)：
+  
+```json
+{
+    "sub": "cml3ovxkv0000qvuct779c7em",
+    "role": "MERCHANT",
+    "email": "test1@demo.com",
+    "iat": 1770007261,
+    "exp": 1770612061
+}
+```
 
 
 
