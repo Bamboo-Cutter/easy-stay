@@ -1,0 +1,94 @@
+.layout {
+  display: flex;
+  height: 100%;
+}
+
+
+
+/* 左侧菜单 */
+.sider {
+  width: 200px;
+  background: #001529;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;     /* 🔥 固定 */
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.logo {
+  height: 60px;
+  line-height: 60px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  background: #002140;
+}
+
+.menu {
+  flex: 1;
+  padding-top: 10px;
+}
+
+.menu-item {
+  padding: 12px 20px;
+  cursor: pointer;
+}
+
+.menu-item:hover {
+  background: #1677ff;
+}
+
+/* 右侧主体 */
+.main {
+  flex: 1; 
+  display: flex;
+  flex-direction: column;
+  margin-left: 200px;  /* 🔥 给左侧栏让位 */
+  padding-top: 60px;   /* 给顶部 header 让位 */
+  height: 100vh;
+}
+
+.header {
+  height: 60px;
+  background: #fff;
+  padding: 0 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  position: fixed;     /* 🔥 固定 */
+  top: 0;
+  left: 200px;         /* 🔥 给左侧栏让位 */
+  right: 0;
+  z-index: 1000;       /* 防止被内容盖住 */
+}
+
+.logout-btn {
+  border: none;
+  background: #ff4d4f;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.logout-btn:hover {
+  background: #ff7875;
+}
+
+.content {
+  flex: 1;
+  padding: 20px;
+  background: #f0f2f5;
+  overflow-y: auto;   /* 🔥 只滚内容 */
+}
+
+.account-info {
+  margin-left: auto;   /* 🔥 把账号整体推到右侧 */
+  margin-right: 8px;   /* 和退出按钮贴近 */
+  font-size: 14px;
+  color: #555;
+}
