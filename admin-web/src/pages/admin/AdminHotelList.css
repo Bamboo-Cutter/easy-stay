@@ -1,0 +1,166 @@
+.admin-hotel {
+  background: #fff;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+/* Tab */
+.tab-bar {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.tab-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  background: #f0f2f5;
+}
+
+.tab-item.active {
+  background: #1677ff;
+  color: #fff;
+}
+
+/* 表格 */
+.hotel-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.hotel-table th,
+.hotel-table td {
+  border: 1px solid #eee;
+  padding: 10px;
+}
+
+.hotel-en {
+  font-size: 12px;
+  color: #999;
+}
+
+.detail-link {
+  font-size: 12px;
+  color: #1677ff;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+/* 状态颜色 */
+.status.已上线 {
+  color: #52c41a;
+}
+
+.status.审核中 {
+  color: #faad14;
+}
+
+.status.已下线 {
+  color: #ff4d4f;
+}
+
+/* 弹窗 */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal {
+  width: 500px;
+  height: 70vh;          /* 🔥 固定高度 */
+  background: #fff;
+  padding: 20px;
+  border-radius: 6px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-close {
+  position: absolute;
+  right: 12px;
+  top: 8px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.modal-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  margin-bottom: 12px;
+}
+
+.modal-body {
+  flex: 1;               /* 🔥 占满剩余空间 */
+  overflow-y: auto;      /* 🔥 内容滚动 */
+  margin-top: 12px;
+}
+
+.audit-link {
+  color: #1677ff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* 弹窗结构 */
+.modal {
+  width: 520px;
+  height: 75vh;
+  background: #fff;
+  border-radius: 6px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto; /* 🔥 图片 + 内容一起滚 */
+}
+
+.modal-img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  margin-bottom: 12px;
+}
+
+.audit-section {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audit-section textarea {
+  min-height: 80px;
+  resize: none;
+}
+
+.modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+  text-align: right;
+}
+
+.modal-footer button {
+  background: #1677ff;
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-footer button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

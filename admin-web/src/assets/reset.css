@@ -1,0 +1,31 @@
+body,
+html {
+    margin: 0;
+    padding: 0;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.df {
+    display: flex;
+}
+.f1 {
+    flex: 1;
+}
+.fn {
+    flex: none;
+}
+.jcc {
+    justify-content: center;
+}
+.aic {
+    align-items: center;
+}
+.jcsb {
+    justify-content: space-between;
+}
+.jcsa {
+    justify-content: space-around;
+}
