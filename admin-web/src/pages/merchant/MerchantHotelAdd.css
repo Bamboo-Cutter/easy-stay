@@ -1,0 +1,56 @@
+.merchant-page {
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.page-title {
+  margin-bottom: 20px;
+}
+
+.form {
+  max-width: 600px;
+}
+
+.form-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.form-item label {
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.form-item input,
+.form-item select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid #dcdcdc;
+  border-radius: 4px;
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 10px;
+  background: #fff7e6;
+  color: #fa8c16;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.submit-btn {
+  margin-top: 20px;
+  width: 100%;
+  height: 40px;
+  background: #1677ff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.submit-btn:hover {
+  background: #4096ff;
+}
