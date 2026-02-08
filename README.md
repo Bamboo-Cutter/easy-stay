@@ -249,207 +249,413 @@ pnpm -C apps/api test:e2e
 
 三项都通过后再提交。
 
-## 10. API 文档（详细版）
-Base URL：`http://localhost:3000`
+## 10. API Reference
+Base URL: `http://localhost:3000`
 
-### 10.1 通用约定
-1. 鉴权
-- 需要登录的接口请带请求头：`Authorization: Bearer <access_token>`
+### 10.1 Authentication
+- Header: `Authorization: Bearer <access_token>`
+- Auth required: endpoint 标注为 `Yes` 时必须携带 Header。
 
-2. 日期字段
-- 本项目库存和价格都按“天”处理，建议传 ISO8601（如 `2026-02-10T00:00:00.000Z`）。
-- `check_out` 为离店日，不计入入住夜晚库存。
+### 10.2 Standard Error Response
+```json
+{
+  "statusCode": 400,
+  "message": "error message",
+  "error": "Bad Request"
+}
+```
 
-3. 错误响应
-- 由 Nest 默认异常格式返回，常见字段：`statusCode`、`message`、`error`。
+### 10.3 Status Codes
+- `200 OK`: 查询/更新成功
+- `201 Created`: 创建成功
+- `400 Bad Request`: 参数校验失败或业务校验失败
+- `401 Unauthorized`: 未登录或 Token 无效
+- `403 Forbidden`: 角色或资源权限不足
+- `404 Not Found`: 资源不存在
 
-4. 常见状态码
-- `200`：查询/更新成功
-- `201`：创建成功
-- `400`：参数校验失败或业务校验失败（如库存不足）
-- `401`：未登录/Token 无效
-- `403`：角色无权限或资源不属于当前用户
-- `404`：资源不存在
+### 10.4 Endpoints
 
-### 10.2 权限矩阵
-| 接口前缀 | 访问角色 |
-|---|---|
-| `/health` | 公开 |
-| `/auth/*` | `register/login` 公开，`me/logout` 需登录 |
-| `/merchant/*` | `MERCHANT` / `ADMIN` |
-| `/admin/*` | `ADMIN` |
-| `/hotels/*` | 公开 |
-| `/bookings/*` | 公开（当前实现未强制登录） |
+#### Health
 
-### 10.3 Health
-1. `GET /health`
-- 说明：服务健康检查
-- 响应：
+##### 1) Health Check
+- Method: `GET`
+- Path: `/health`
+- Auth: `No`
+
+Success `200`
 ```json
 { "status": "ok" }
 ```
 
-### 10.4 Auth
-1. `POST /auth/register`
-- 字段：
-| 字段 | 类型 | 必填 | 说明 |
-|---|---|---|---|
-| email | string(email) | 是 | 账号邮箱（唯一） |
-| password | string | 是 | 最少 6 位 |
-| role | `MERCHANT`/`ADMIN` | 否 | 不传默认 `MERCHANT` |
+---
 
-2. `POST /auth/login`
-- 字段：
-| 字段 | 类型 | 必填 |
-|---|---|---|
-| email | string(email) | 是 |
-| password | string | 是 |
-- 响应示例：
+#### Auth
+
+##### 2) Register
+- Method: `POST`
+- Path: `/auth/register`
+- Auth: `No`
+
+Request Body
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| email | string | Yes | email |
+| password | string | Yes | min length 6 |
+| role | enum | No | `MERCHANT` / `ADMIN` |
+
+Example
 ```json
 {
-  "access_token": "xxx",
-  "user": { "id": "u1", "email": "merchant_demo@test.com", "role": "MERCHANT" }
+  "email": "merchant_demo@test.com",
+  "password": "123456",
+  "role": "MERCHANT"
 }
 ```
 
-3. `GET /auth/me`（需登录）  
-4. `POST /auth/logout`（需登录）
+Success `201`
+```json
+{
+  "id": "user_id",
+  "email": "merchant_demo@test.com",
+  "role": "MERCHANT",
+  "created_at": "2026-02-08T12:00:00.000Z"
+}
+```
 
-### 10.5 Merchant（商户端）
-1. `GET /merchant/me`
-2. `GET /merchant/hotels`
-3. `POST /merchant/hotels`
-- 字段：
-| 字段 | 类型 | 必填 |
+##### 3) Login
+- Method: `POST`
+- Path: `/auth/login`
+- Auth: `No`
+
+Request Body
+| Field | Type | Required |
 |---|---|---|
-| name_cn | string | 是 |
-| name_en | string | 否 |
-| address | string | 是 |
-| city | string | 是 |
-| star | int | 是 |
-| type | string | 是 |
-| open_year | int | 是 |
-| status | `DRAFT/PENDING/APPROVED/REJECTED/OFFLINE` | 否 |
+| email | string | Yes |
+| password | string | Yes |
 
-4. `PATCH /merchant/hotels/:id`
-- 说明：更新酒店资料，也可把状态改为 `PENDING` 提交审核。
+Success `201`
+```json
+{
+  "access_token": "jwt_token",
+  "user": {
+    "id": "user_id",
+    "email": "merchant_demo@test.com",
+    "role": "MERCHANT"
+  }
+}
+```
 
-5. `POST /merchant/hotels/:id/images`
-- 字段：
-| 字段 | 类型 | 必填 | 说明 |
+##### 4) Get Current User
+- Method: `GET`
+- Path: `/auth/me`
+- Auth: `Yes`
+
+Success `200`
+```json
+{
+  "id": "user_id",
+  "sub": "user_id",
+  "email": "merchant_demo@test.com",
+  "role": "MERCHANT"
+}
+```
+
+##### 5) Logout
+- Method: `POST`
+- Path: `/auth/logout`
+- Auth: `Yes`
+
+Success `201`
+```json
+{ "status": "ok" }
+```
+
+---
+
+#### Merchant
+
+##### 6) Merchant Profile
+- Method: `GET`
+- Path: `/merchant/me`
+- Auth: `Yes` (`MERCHANT` / `ADMIN`)
+
+##### 7) Merchant Hotels
+- Method: `GET`
+- Path: `/merchant/hotels`
+- Auth: `Yes` (`MERCHANT` / `ADMIN`)
+
+##### 8) Create Hotel
+- Method: `POST`
+- Path: `/merchant/hotels`
+- Auth: `Yes` (`MERCHANT` / `ADMIN`)
+
+Request Body
+| Field | Type | Required |
+|---|---|---|
+| name_cn | string | Yes |
+| name_en | string | No |
+| address | string | Yes |
+| city | string | Yes |
+| star | int | Yes |
+| type | string | Yes |
+| open_year | int | Yes |
+| status | enum | No |
+
+##### 9) Update Hotel
+- Method: `PATCH`
+- Path: `/merchant/hotels/{id}`
+- Auth: `Yes` (`MERCHANT` / `ADMIN`)
+
+Path Params
+| Name | Type | Required |
+|---|---|---|
+| id | string | Yes |
+
+##### 10) Set Hotel Images
+- Method: `POST`
+- Path: `/merchant/hotels/{id}/images`
+- Auth: `Yes` (`MERCHANT` / `ADMIN`)
+
+Request Body
+| Field | Type | Required |
+|---|---|---|
+| items | array | Yes |
+| items[].url | string | Yes |
+| items[].sort | int | Yes |
+
+##### 11) Set Hotel Tags
+- Method: `POST`
+- Path: `/merchant/hotels/{id}/tags`
+- Auth: `Yes` (`MERCHANT` / `ADMIN`)
+
+Request Body
+| Field | Type | Required |
+|---|---|---|
+| tags | string[] | Yes |
+
+##### 12) Create Room
+- Method: `POST`
+- Path: `/merchant/hotels/{id}/rooms`
+- Auth: `Yes` (`MERCHANT` / `ADMIN`)
+
+Request Body
+| Field | Type | Required |
+|---|---|---|
+| name | string | Yes |
+| max_occupancy | int | Yes |
+| total_rooms | int | Yes |
+| base_price | int | Yes |
+| refundable | boolean | Yes |
+| breakfast | boolean | Yes |
+
+##### 13) Upsert Room Price Calendar
+- Method: `POST`
+- Path: `/merchant/rooms/{roomId}/prices`
+- Auth: `Yes` (`MERCHANT` / `ADMIN`)
+
+Path Params
+| Name | Type | Required |
+|---|---|---|
+| roomId | string | Yes |
+
+Request Body
+| Field | Type | Required |
+|---|---|---|
+| date | ISO8601 string | Yes |
+| price | int | Yes |
+| promo_type | string | No |
+| promo_value | int | No |
+
+---
+
+#### Admin
+
+##### 14) Pending Hotels
+- Method: `GET`
+- Path: `/admin/hotels/pending`
+- Auth: `Yes` (`ADMIN`)
+
+##### 15) Approve Hotel
+- Method: `POST`
+- Path: `/admin/hotels/{id}/approve`
+- Auth: `Yes` (`ADMIN`)
+
+Path Params
+| Name | Type | Required |
+|---|---|---|
+| id | string | Yes |
+
+##### 16) Reject Hotel
+- Method: `POST`
+- Path: `/admin/hotels/{id}/reject`
+- Auth: `Yes` (`ADMIN`)
+
+Request Body
+| Field | Type | Required |
+|---|---|---|
+| reason | string | No |
+
+##### 17) Get Room Inventory Calendar
+- Method: `GET`
+- Path: `/admin/rooms/{roomId}/inventory`
+- Auth: `Yes` (`ADMIN`)
+
+Path Params
+| Name | Type | Required |
+|---|---|---|
+| roomId | string | Yes |
+
+Query Params
+| Name | Type | Required |
+|---|---|---|
+| from | ISO8601 string | No |
+| to | ISO8601 string | No |
+
+##### 18) Set Room Inventory
+- Method: `POST`
+- Path: `/admin/rooms/{roomId}/inventory`
+- Auth: `Yes` (`ADMIN`)
+
+Request Body
+| Field | Type | Required |
+|---|---|---|
+| date | ISO8601 string | Yes |
+| total_rooms | int | No |
+| blocked_rooms | int | No |
+
+---
+
+#### Public Hotels
+
+##### 19) List Hotels
+- Method: `GET`
+- Path: `/hotels`
+- Auth: `No`
+
+Query Params
+| Name | Type | Required | Default |
 |---|---|---|---|
-| items | array | 是 | 覆盖写入 |
-| items[].url | string | 是 | 图片地址 |
-| items[].sort | int | 是 | 排序值 |
+| city | string | No | - |
+| keyword | string | No | - |
+| page | int | No | 1 |
+| limit | int | No | 20 |
 
-6. `POST /merchant/hotels/:id/tags`
-- 字段：
-| 字段 | 类型 | 必填 |
+Success `200`
+```json
+{
+  "items": [],
+  "total": 120,
+  "page": 1,
+  "limit": 20
+}
+```
+
+##### 20) Hotel Detail
+- Method: `GET`
+- Path: `/hotels/{id}`
+- Auth: `No`
+
+Path Params
+| Name | Type | Required |
 |---|---|---|
-| tags | string[] | 是 |
+| id | string | Yes |
 
-7. `POST /merchant/hotels/:id/rooms`
-- 字段：
-| 字段 | 类型 | 必填 | 说明 |
+Query Params
+| Name | Type | Required | Notes |
 |---|---|---|---|
-| name | string | 是 | 房型名 |
-| max_occupancy | int | 是 | 每间可住人数 |
-| total_rooms | int | 是 | 该房型总间数 |
-| base_price | int | 是 | 基础价 |
-| refundable | boolean | 是 | 是否可退 |
-| breakfast | boolean | 是 | 是否含早 |
+| check_in | ISO8601 string | No | 与 `check_out` 同时使用 |
+| check_out | ISO8601 string | No | 离店日 |
+| rooms_count | int | No | 默认 1 |
 
-8. `POST /merchant/rooms/:roomId/prices`
-- 字段：
-| 字段 | 类型 | 必填 |
+##### 21) Room Price Calendar
+- Method: `GET`
+- Path: `/hotels/rooms/{roomId}/prices`
+- Auth: `No`
+
+Query Params: `from`, `to`（可选）
+
+##### 22) Room Availability
+- Method: `GET`
+- Path: `/hotels/rooms/{roomId}/availability`
+- Auth: `No`
+
+Query Params
+| Name | Type | Required |
 |---|---|---|
-| date | ISO8601 | 是 |
-| price | int | 是 |
-| promo_type | string | 否 |
-| promo_value | int | 否 |
+| check_in | ISO8601 string | No |
+| check_out | ISO8601 string | No |
+| rooms_count | int | No |
 
-### 10.6 Admin（管理端）
-1. `GET /admin/hotels/pending`
-- 说明：查询待审核酒店
+Success `200`
+```json
+{
+  "room_id": "room_id",
+  "required_rooms": 1,
+  "available_rooms": 6,
+  "is_available": true
+}
+```
 
-2. `POST /admin/hotels/:id/approve`
-- 说明：审核通过；并初始化该酒店房型的未来库存日历。
+---
 
-3. `POST /admin/hotels/:id/reject`
-- 字段：
-| 字段 | 类型 | 必填 |
+#### Bookings
+
+##### 23) Create Booking
+- Method: `POST`
+- Path: `/bookings`
+- Auth: `No` (当前实现)
+
+Request Body
+| Field | Type | Required |
 |---|---|---|
-| reason | string | 否（默认 `rejected`） |
+| hotel_id | string | Yes |
+| room_id | string | Yes |
+| check_in | ISO8601 string | Yes |
+| check_out | ISO8601 string | Yes |
+| rooms_count | int | Yes |
+| guest_count | int | Yes |
+| contact_name | string | Yes |
+| contact_phone | string | Yes |
+| user_id | string | No |
 
-4. `GET /admin/rooms/:roomId/inventory?from=...&to=...`
-- 说明：查询房型库存日历（返回 `available_rooms`）。
+Success `201`
+```json
+{
+  "id": "booking_id",
+  "status": "CONFIRMED",
+  "total_amount": 52000
+}
+```
 
-5. `POST /admin/rooms/:roomId/inventory`
-- 字段：
-| 字段 | 类型 | 必填 |
-|---|---|---|
-| date | ISO8601 | 是 |
-| total_rooms | int | 否 |
-| blocked_rooms | int | 否 |
+##### 24) Booking Detail
+- Method: `GET`
+- Path: `/bookings/{id}`
+- Auth: `No` (当前实现)
 
-### 10.7 Hotels（C 端公开查询）
-1. `GET /hotels`
-- 查询参数：
-| 参数 | 类型 | 必填 | 默认 |
-|---|---|---|---|
-| city | string | 否 | - |
-| keyword | string | 否 | - |
-| page | int | 否 | 1 |
-| limit | int | 否 | 20 |
+##### 25) Cancel Booking
+- Method: `PATCH`
+- Path: `/bookings/{id}/cancel`
+- Auth: `No` (当前实现)
 
-2. `GET /hotels/:id`
-- 可选参数：`check_in`、`check_out`、`rooms_count`
-- 当传入住区间时，响应包含 `room_price_list`（按价格排序并带可售房量）。
+Success `200`
+```json
+{ "id": "booking_id", "status": "CANCELLED" }
+```
 
-3. `GET /hotels/rooms/:roomId/prices`
-- 参数：`from`、`to`（可选）
+### 10.5 Business Rules
+1. 酒店必须为 `APPROVED` 才可预订。
+2. 预订会按 `room_id + date` 校验并扣减库存（`reserved_rooms`）。
+3. 取消预订会回补库存。
+4. 价格计算优先使用 `price_calendar`，缺失时回退 `rooms.base_price`。
+5. `check_out` 不计入库存占用夜晚。
 
-4. `GET /hotels/rooms/:roomId/availability`
-- 参数：
-| 参数 | 类型 | 必填 |
-|---|---|---|
-| check_in | ISO8601 | 否 |
-| check_out | ISO8601 | 否 |
-| rooms_count | int | 否（默认 1） |
+### 10.6 Integration Flow
+1. Register merchant/admin -> login
+2. Merchant create hotel -> create room -> set price -> submit `PENDING`
+3. Admin approve hotel -> set room inventory
+4. Public query hotels/detail/availability
+5. Create booking -> get booking detail -> cancel booking
 
-### 10.8 Bookings（预订）
-1. `POST /bookings`
-- 字段：
-| 字段 | 类型 | 必填 | 说明 |
-|---|---|---|---|
-| hotel_id | string | 是 | 酒店 ID |
-| room_id | string | 是 | 房型 ID |
-| check_in | ISO8601 | 是 | 入住日 |
-| check_out | ISO8601 | 是 | 离店日 |
-| rooms_count | int | 是 | 预订间数 |
-| guest_count | int | 是 | 入住人数 |
-| contact_name | string | 是 | 联系人 |
-| contact_phone | string | 是 | 联系电话 |
-| user_id | string | 否 | 登录用户 ID（当前可不传） |
-
-- 关键业务规则：
-1. 仅 `APPROVED` 酒店可下单。
-2. 按入住区间逐天校验库存。
-3. 下单成功后逐天增加 `reserved_rooms`。
-4. 订单金额按“日历价优先，缺失时用 `base_price`”计算。
-
-2. `GET /bookings/:id`
-- 说明：查询预订详情（含酒店与房型基础信息）。
-
-3. `PATCH /bookings/:id/cancel`
-- 说明：取消预订并回补库存。
-
-### 10.9 联调时序（推荐）
-1. 注册商户 + 注册管理员  
-2. 商户登录 -> 建酒店 -> 建房型 -> 设价格 -> 提交 `PENDING`  
-3. 管理员登录 -> 审核通过 -> 设库存  
-4. 公开查询酒店列表/详情/可售房量  
-5. 创建预订 -> 查详情 -> 取消预订  
 
 ## 11. Postman 使用说明
 项目根目录已提供：`postman.json`
