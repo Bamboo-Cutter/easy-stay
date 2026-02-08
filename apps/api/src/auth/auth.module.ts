@@ -1,3 +1,6 @@
+/**
+ * 文件说明：该文件定义了 Nest 模块装配关系。
+ */
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';

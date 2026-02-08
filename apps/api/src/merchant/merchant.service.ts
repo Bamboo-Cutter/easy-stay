@@ -1,3 +1,6 @@
+/**
+ * 文件说明：该文件定义了核心业务逻辑与数据库访问流程。
+ */
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpsertHotelDto } from './dto/upsert-hotel.dto';
@@ -10,6 +13,7 @@ import { UpsertPriceDto } from './dto/upsert-price.dto';
 export class MerchantService {
   constructor(private prisma: PrismaService) {}
 
+  // 查询当前登录商家的基础资料
   async me(userId: string) {
     const u = await this.prisma.users.findUnique({
       where: { id: userId },
@@ -19,6 +23,7 @@ export class MerchantService {
     return u;
   }
 
+  // 查询当前商家名下所有酒店（含图片/标签/房型）
   async myHotels(userId: string) {
     return this.prisma.hotels.findMany({
       where: { merchant_id: userId },
@@ -32,6 +37,7 @@ export class MerchantService {
     });
   }
 
+  // 创建酒店记录
   async createHotel(userId: string, dto: UpsertHotelDto) {
     return this.prisma.hotels.create({
       data: {
@@ -48,6 +54,7 @@ export class MerchantService {
     });
   }
 
+  // 更新酒店信息并校验所有权
   async updateHotel(userId: string, hotelId: string, dto: UpsertHotelDto) {
     const hotel = await this.prisma.hotels.findUnique({ where: { id: hotelId } });
     if (!hotel) throw new NotFoundException('Hotel not found');
@@ -68,12 +75,12 @@ export class MerchantService {
     });
   }
 
+  // 覆盖写入酒店图片（先删后插）
   async setImages(userId: string, hotelId: string, dto: SetImagesDto) {
     const hotel = await this.prisma.hotels.findUnique({ where: { id: hotelId } });
     if (!hotel) throw new NotFoundException('Hotel not found');
     if (hotel.merchant_id !== userId) throw new ForbiddenException('Not your hotel');
 
-    // 简单做法：先删后插（你也可以做更精细的 diff）
     await this.prisma.hotel_images.deleteMany({ where: { hotel_id: hotelId } });
 
     await this.prisma.hotel_images.createMany({
@@ -87,6 +94,7 @@ export class MerchantService {
     return { status: 'ok' };
   }
 
+  // 覆盖写入酒店标签（先删后插）
   async setTags(userId: string, hotelId: string, dto: SetTagsDto) {
     const hotel = await this.prisma.hotels.findUnique({ where: { id: hotelId } });
     if (!hotel) throw new NotFoundException('Hotel not found');
@@ -94,7 +102,6 @@ export class MerchantService {
 
     await this.prisma.hotel_tags.deleteMany({ where: { hotel_id: hotelId } });
 
-    // hotel_tags 有 @@unique([hotel_id, tag])，createMany 也 OK
     await this.prisma.hotel_tags.createMany({
       data: dto.tags.map((tag) => ({ hotel_id: hotelId, tag })),
       skipDuplicates: true,
@@ -103,6 +110,7 @@ export class MerchantService {
     return { status: 'ok' };
   }
 
+  // 为酒店新增房型
   async createRoom(userId: string, hotelId: string, dto: CreateRoomDto) {
     const hotel = await this.prisma.hotels.findUnique({ where: { id: hotelId } });
     if (!hotel) throw new NotFoundException('Hotel not found');
@@ -112,7 +120,8 @@ export class MerchantService {
       data: {
         hotel_id: hotelId,
         name: dto.name,
-        capacity: dto.capacity,
+        max_occupancy: dto.max_occupancy,
+        total_rooms: dto.total_rooms,
         base_price: dto.base_price,
         refundable: dto.refundable,
         breakfast: dto.breakfast,
@@ -120,6 +129,7 @@ export class MerchantService {
     });
   }
 
+  // 按 room + date 执行价格日历 upsert
   async upsertRoomPrice(userId: string, roomId: string, dto: UpsertPriceDto) {
     const room = await this.prisma.rooms.findUnique({
       where: { id: roomId },
