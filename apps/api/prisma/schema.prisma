@@ -20,6 +20,13 @@ enum hotel_status {
   OFFLINE
 }
 
+enum booking_status {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
 model users {
   id         String   @id @default(cuid())
   email      String   @unique
@@ -28,6 +35,7 @@ model users {
   created_at DateTime @default(now())
 
   hotels     hotels[]
+  bookings   bookings[]
 }
 
 model hotels {
@@ -48,6 +56,7 @@ model hotels {
   hotel_images   hotel_images[]
   hotel_tags     hotel_tags[]
   rooms          rooms[]
+  bookings       bookings[]
   nearby_points  nearby_points[]
   review_summary review_summary?
 
@@ -81,16 +90,19 @@ model hotel_tags {
 }
 
 model rooms {
-  id            String  @id @default(cuid())
-  hotel_id      String
-  name          String
-  capacity      Int
-  base_price    Int
-  refundable    Boolean @default(false)
-  breakfast     Boolean @default(false)
+  id                   String                 @id @default(cuid())
+  hotel_id             String
+  name                 String
+  max_occupancy        Int                    @default(2)
+  total_rooms          Int                    @default(1)
+  base_price           Int
+  refundable           Boolean                @default(false)
+  breakfast            Boolean                @default(false)
 
-  hotel         hotels  @relation(fields: [hotel_id], references: [id])
+  hotel                hotels                 @relation(fields: [hotel_id], references: [id])
   price_calendar price_calendar[]
+  inventory_daily      room_inventory_daily[]
+  bookings             bookings[]
 
   @@index([hotel_id])
 }
@@ -107,6 +119,48 @@ model price_calendar {
 
   @@unique([room_id, date])
   @@index([date])
+}
+
+model room_inventory_daily {
+  id             String   @id @default(cuid())
+  room_id        String
+  date           DateTime
+  total_rooms    Int
+  reserved_rooms Int      @default(0)
+  blocked_rooms  Int      @default(0)
+
+  room           rooms    @relation(fields: [room_id], references: [id])
+
+  @@unique([room_id, date])
+  @@index([date])
+}
+
+model bookings {
+  id           String         @id @default(cuid())
+  user_id      String?
+  hotel_id     String
+  room_id      String
+  check_in     DateTime
+  check_out    DateTime
+  rooms_count  Int
+  guest_count  Int
+  total_amount Int
+  status       booking_status @default(PENDING)
+  contact_name String
+  contact_phone String
+  created_at   DateTime       @default(now())
+  updated_at   DateTime       @updatedAt
+
+  user         users?         @relation(fields: [user_id], references: [id])
+  hotel        hotels         @relation(fields: [hotel_id], references: [id])
+  room         rooms          @relation(fields: [room_id], references: [id])
+
+  @@index([user_id])
+  @@index([hotel_id])
+  @@index([room_id])
+  @@index([check_in])
+  @@index([check_out])
+  @@index([status])
 }
 
 model nearby_points {

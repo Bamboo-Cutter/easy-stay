@@ -81,7 +81,8 @@ async function main() {
     data: {
       hotel_id: h1.id,
       name: '豪华大床房',
-      capacity: 2,
+      max_occupancy: 2,
+      total_rooms: 12,
       base_price: 22000, // 用“分”避免浮点：$220.00 -> 22000
       refundable: true,
       breakfast: true,

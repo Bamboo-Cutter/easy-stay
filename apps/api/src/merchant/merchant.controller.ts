@@ -1,3 +1,6 @@
+/**
+ * 文件说明：该文件定义了接口路由与请求转发逻辑。
+ */
 import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { user_role } from '@prisma/client';
@@ -16,36 +19,43 @@ import { UpsertPriceDto } from './dto/upsert-price.dto';
 export class MerchantController {
   constructor(private readonly merchant: MerchantService) {}
 
+  // 获取当前商家信息
   @Get('me')
   me(@Req() req: any) {
     return this.merchant.me(req.user.id);
   }
 
+  // 获取当前商家的酒店列表
   @Get('hotels')
   myHotels(@Req() req: any) {
     return this.merchant.myHotels(req.user.id);
   }
 
+  // 创建酒店草稿
   @Post('hotels')
   createHotel(@Req() req: any, @Body() dto: UpsertHotelDto) {
     return this.merchant.createHotel(req.user.id, dto);
   }
 
+  // 更新酒店信息（可用于提交审核）
   @Patch('hotels/:id')
   updateHotel(@Req() req: any, @Param('id') id: string, @Body() dto: UpsertHotelDto) {
     return this.merchant.updateHotel(req.user.id, id, dto);
   }
 
+  // 覆盖设置酒店图片
   @Post('hotels/:id/images')
   setImages(@Req() req: any, @Param('id') id: string, @Body() dto: SetImagesDto) {
     return this.merchant.setImages(req.user.id, id, dto);
   }
 
+  // 覆盖设置酒店标签
   @Post('hotels/:id/tags')
   setTags(@Req() req: any, @Param('id') id: string, @Body() dto: SetTagsDto) {
     return this.merchant.setTags(req.user.id, id, dto);
   }
 
+  // 新增酒店房型
   @Post('hotels/:id/rooms')
   createRoom(@Req() req: any, @Param('id') id: string, @Body() dto: CreateRoomDto) {
     return this.merchant.createRoom(req.user.id, id, dto);

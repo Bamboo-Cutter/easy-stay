@@ -1,447 +1,211 @@
+# Easy-Stay Hotel Backend
 
-# Easy-Stay Hotel Backend (NestJS + Prisma + PostgreSQL)
-
-这是 Easy-Stay Hotel 项目
-后端采用 **NestJS + Prisma + PostgreSQL(Docker)**，并提供基础的 **Health Check**、**注册/登录** API。
-
----
+本仓库当前以 **后端 API 服务** 为主（NestJS + Prisma + PostgreSQL）。
 
 ## 1. 技术栈
+- Node.js + TypeScript
+- NestJS
+- Prisma ORM
+- PostgreSQL (Docker)
+- pnpm
 
-* **Node.js**：建议 `v22.x`（不要用 v25，会遇到 ESM/CJS 依赖问题）
-* **NestJS**：后端框架
-* **Prisma**：ORM + Migration + Seed
-* **PostgreSQL 16**：Docker 运行
-* **pnpm**：包管理器
+## 2. 目录说明
+- `apps/api/src`：后端业务代码
+- `apps/api/prisma/schema.prisma`：数据库模型定义
+- `apps/api/test/app.e2e-spec.ts`：端到端测试
+- `docker-compose.yml`：本地 PostgreSQL 启动配置
 
----
+## 3. 环境准备
+要求：
+- Node.js 20+
+- pnpm
+- Docker Desktop
 
-## 2. 项目结构
-
-```bash
-easy-stay-hotel/
-  apps/
-    api/                         # NestJS 后端
-      prisma/
-        schema.prisma
-        migrations/
-        seed.ts
-      src/
-        auth/
-        health/
-        prisma/
-        main.ts
-        app.module.ts
-      .env.example
-      package.json
-    easy-stay-api.postman_collection.json  # Postman collection
-  docker-compose.yml
-  er.png
-  README.md
-```
-
----
-
-## 3. 本地启动（推荐流程）
-
-### 3.1 前置要求
-
-* Node.js >= 22
-* pnpm >= 10
-* Docker Desktop
-
-检查版本：
+## 4. 本地启动步骤
+### 4.1 启动数据库
+在仓库根目录执行：
 
 ```bash
-node -v
-pnpm -v
-docker -v
-```
-
----
-
-### 3.2 安装依赖
-
-进入后端目录安装：
-
-```bash
-cd apps/api
-pnpm install
-```
-
----
-
-### 3.3 启动数据库（Docker）
-
-在项目根目录（有 `docker-compose.yml` 的地方）执行：
-
-```bash
-cd ../../
 docker compose up -d
-docker ps
 ```
 
-确认 `postgres` 容器正常运行且端口 `5432` 映射出来。
-
----
-
-### 3.4 配置环境变量
-
-复制配置：
+### 4.2 安装依赖
 
 ```bash
-cd apps/api
-cp .env.example .env
+pnpm -C apps/api install
 ```
 
-`.env` 内容：
-```
+### 4.3 配置环境变量
+后端使用：
+- `apps/api/.env`（开发环境）
+- `apps/api/.env.test`（e2e 环境）
+
+核心变量：
+
+```env
 DATABASE_URL="postgresql://hotel:hotel123@localhost:5432/hotel_booking?schema=public"
 JWT_SECRET="dev_secret_change_me"
 JWT_EXPIRES_IN="7d"
 ```
 
-
----
-
-### 3.5 Prisma Migration + 生成 Client
-
-在 `apps/api` 下执行：
+### 4.4 同步数据库结构
 
 ```bash
-pnpm prisma generate
-pnpm prisma migrate dev
+pnpm -C apps/api exec dotenv -e .env.test -- prisma db push
 ```
 
----
-
-### 3.6 数据初始化（Seed）
+### 4.5 启动服务
 
 ```bash
-pnpm prisma db seed
+pnpm -C apps/api start:dev
 ```
 
-> Seed 脚本位置：`apps/api/prisma/seed.ts`
+默认地址：`http://localhost:3000`
 
----
+## 5. 常用命令
+```bash
+# 构建
+pnpm -C apps/api build
 
-### 3.7 启动服务
+# 代码检查
+pnpm -C apps/api lint
+
+# e2e 测试
+pnpm -C apps/api test:e2e
+```
+
+## 6. 当前后端功能范围
+### 6.1 认证与角色
+- 商户 / 管理员注册登录
+- JWT 鉴权
+- 角色权限控制
+
+### 6.2 商户侧
+- 酒店录入、编辑、提交审核
+- 图片/标签维护
+- 房型创建
+- 房型价格日历维护
+
+### 6.3 管理员侧
+- 待审核酒店列表
+- 审核通过/拒绝
+- 房型库存日历查询与设置
+
+### 6.4 C 端公开查询
+- 酒店列表
+- 酒店详情
+- 房型价格日历
+- 房型区间可用库存查询
+
+### 6.5 预订流程
+- 创建预订（校验库存并扣减）
+- 查询预订详情
+- 取消预订（释放库存）
+
+## 7. 数据模型总览
+核心表：
+- `users`
+- `hotels`
+- `rooms`
+- `price_calendar`
+- `room_inventory_daily`
+- `bookings`
+- 以及酒店扩展表：`hotel_images` / `hotel_tags` / `nearby_points` / `review_summary`
+
+说明：
+- 库存按 `room_id + date` 管理（`room_inventory_daily`）
+- 价格按 `room_id + date` 管理（`price_calendar`）
+- `rooms.max_occupancy` 表示每间可住人数
+- `rooms.total_rooms` 表示该房型总间数
+
+## 8. 主要 API
+- Health: `GET /health`
+- Auth: `POST /auth/register` / `POST /auth/login` / `GET /auth/me` / `POST /auth/logout`
+- Merchant:
+  - `GET /merchant/me`
+  - `GET /merchant/hotels`
+  - `POST /merchant/hotels`
+  - `PATCH /merchant/hotels/:id`
+  - `POST /merchant/hotels/:id/images`
+  - `POST /merchant/hotels/:id/tags`
+  - `POST /merchant/hotels/:id/rooms`
+  - `POST /merchant/rooms/:roomId/prices`
+- Admin:
+  - `GET /admin/hotels/pending`
+  - `POST /admin/hotels/:id/approve`
+  - `POST /admin/hotels/:id/reject`
+  - `GET /admin/rooms/:roomId/inventory`
+  - `POST /admin/rooms/:roomId/inventory`
+- Hotels (Public):
+  - `GET /hotels`
+  - `GET /hotels/:id`
+  - `GET /hotels/rooms/:roomId/prices`
+  - `GET /hotels/rooms/:roomId/availability`
+- Bookings:
+  - `POST /bookings`
+  - `GET /bookings/:id`
+  - `PATCH /bookings/:id/cancel`
+
+## 9. 上传 Git 前检查清单
+建议按顺序执行：
 
 ```bash
-pnpm start:dev
+pnpm -C apps/api lint
+pnpm -C apps/api build
+pnpm -C apps/api test:e2e
 ```
 
-默认端口：`http://localhost:3000`
+三项都通过后再提交。
 
----
+## 10. API 文档（联调版）
+Base URL：`http://localhost:3000`
 
-## 4. 健康检查
+鉴权方式：
+- 需要登录的接口请带请求头 `Authorization: Bearer <access_token>`
 
-浏览器/命令行测试：
-
-```bash
-curl http://localhost:3000/health
-```
-
-成功时会返回类似：
-
-```json
-{ "ok": true }
-```
-
----
-
-# 5. API 文档（当前实现）
-
-
-
-你上面那套代码逻辑整体是没问题的 ✅（Auth/JWT + RolesGuard + Merchant 校验归属 + Admin 审核 + Public 只展示 APPROVED 都很合理）。
-唯一我会提醒你两点小坑（不影响写文档）：
-
-1. **Public hotels 的 controller 路由顺序**：你写了 `@Get(':id')` 又写了 `@Get('rooms/:roomId/prices')`，Nest 一般能匹配更具体的，但为了稳，建议把 `rooms/:roomId/prices` 放在 `:id` 之前。
-2. **logout** 是无状态 OK 返回，没问题，只是“真正登出”要靠前端删 token（或你后面做 token blacklist）。
-
-下面给你一份 **API 文档（可直接粘进 README.md 的 API Documentation 部分）**，按你当前版本的接口来写。
-
----
-
-## Easy-Stay Hotel Backend API Doc (v1)
-
-**Base URL**: `http://localhost:3000`
-**Content-Type**: `application/json`
-**Auth**: 需要登录的接口加 Header：
-`Authorization: Bearer <accessToken>`
-
-**Role enum**
-
-* `MERCHANT`
-* `ADMIN`
-
-**Hotel status enum**
-
-* `DRAFT`
-* `PENDING`
-* `APPROVED`
-* `REJECTED`
-* `OFFLINE`
-
----
-
-# 1) Health
-
-### GET `/health`
-
-用于检查服务是否在线
-
-**Response 200**
-
+### 10.1 Health
+1. `GET /health`
+请求参数：无  
+响应示例：
 ```json
 { "status": "ok" }
 ```
 
----
-
-# 2) Auth
-
-## POST `/auth/register`
-
-注册用户（支持可选 role；不传默认 MERCHANT）
-
-**Body**
-
+### 10.2 Auth
+1. `POST /auth/register`
+请求体：
 ```json
 {
-  "email": "merchant1@test.com",
+  "email": "merchant_demo@test.com",
   "password": "123456",
   "role": "MERCHANT"
 }
 ```
 
-* `role` 可选，不传默认 `MERCHANT`
-
-**Response 200**
-
+2. `POST /auth/login`
+请求体：
 ```json
 {
-  "id": "ckw...cuid",
-  "email": "merchant1@test.com",
-  "role": "MERCHANT",
-  "created_at": "2026-02-08T07:00:00.000Z"
-}
-```
-
----
-
-## POST `/auth/login`
-
-登录，返回 JWT token（字段名：`accessToken`）
-
-**Body**
-
-```json
-{
-  "email": "merchant1@test.com",
+  "email": "merchant_demo@test.com",
   "password": "123456"
 }
 ```
-
-**Response 200**
-
-```json
-{ "accessToken": "eyJhbGciOi..." }
-```
-
----
-
-## GET `/auth/me` (Bearer)
-
-获取当前登录用户信息（来自 JwtStrategy validate 注入到 `req.user`）
-
-**Response 200**
-
+响应示例：
 ```json
 {
-  "id": "userId",
-  "email": "merchant1@test.com",
-  "role": "MERCHANT"
+  "access_token": "xxx",
+  "user": { "id": "u1", "email": "merchant_demo@test.com", "role": "MERCHANT" }
 }
 ```
 
----
+3. `GET /auth/me`（需鉴权）  
+4. `POST /auth/logout`（需鉴权）
 
-## POST `/auth/logout` (Bearer)
-
-JWT 无状态登出，后端返回 ok，前端删除 token 即可
-
-**Response 200**
-
-```json
-{ "status": "ok" }
-```
-
----
-
-# 3) Public Hotels (仅展示 APPROVED)
-
-> 只有被 Admin 审核通过（`APPROVED`）的酒店，才会出现在 public 接口里。
-
-## GET `/hotels`
-
-酒店列表（支持 city/keyword/page/limit）
-
-**Query Params**
-
-* `city` (optional) string
-* `keyword` (optional) string
-* `page` (optional) int, default `1`
-* `limit` (optional) int, default `20`
-
-**Example**
-`GET /hotels?city=Sydney&keyword=harbour&page=1&limit=20`
-
-**Response 200**
-
-```json
-{
-  "items": [
-    {
-      "id": "hotelId",
-      "name_cn": "测试酒店",
-      "name_en": "Test Hotel",
-      "address": "1 Test St",
-      "city": "Sydney",
-      "star": 5,
-      "type": "Resort",
-      "open_year": 2020,
-      "status": "APPROVED",
-      "reject_reason": null,
-      "merchant_id": "merchantUserId",
-      "created_at": "2026-02-08T07:00:00.000Z",
-      "updated_at": "2026-02-08T07:10:00.000Z",
-      "hotel_images": [
-        { "id": "imgId", "hotel_id": "hotelId", "url": "https://...", "sort": 0 }
-      ],
-      "hotel_tags": [
-        { "id": "tagId", "hotel_id": "hotelId", "tag": "海景" }
-      ],
-      "review_summary": { "id": "rsId", "hotel_id": "hotelId", "rating": 0, "review_count": 0 }
-    }
-  ],
-  "total": 1,
-  "page": 1,
-  "limit": 20
-}
-```
-
----
-
-## GET `/hotels/:id`
-
-酒店详情（包含 images/tags/rooms/nearby/review_summary）
-
-**Response 200**
-
-```json
-{
-  "id": "hotelId",
-  "name_cn": "测试酒店",
-  "name_en": "Test Hotel",
-  "address": "1 Test St",
-  "city": "Sydney",
-  "star": 5,
-  "type": "Resort",
-  "open_year": 2020,
-  "status": "APPROVED",
-  "reject_reason": null,
-  "merchant_id": "merchantUserId",
-  "hotel_images": [],
-  "hotel_tags": [],
-  "rooms": [],
-  "nearby_points": [],
-  "review_summary": { "id": "rsId", "hotel_id": "hotelId", "rating": 0, "review_count": 0 },
-  "created_at": "2026-02-08T07:00:00.000Z",
-  "updated_at": "2026-02-08T07:10:00.000Z"
-}
-```
-
----
-
-## GET `/hotels/rooms/:roomId/prices`
-
-查看某个房型的价格日历（price_calendar）
-
-**Query Params**
-
-* `from` (optional) ISO8601
-* `to` (optional) ISO8601
-
-**Example**
-`GET /hotels/rooms/roomId/prices?from=2026-02-01T00:00:00.000Z&to=2026-02-10T00:00:00.000Z`
-
-**Response 200**
-
-```json
-[
-  {
-    "id": "pcId",
-    "room_id": "roomId",
-    "date": "2026-02-02T00:00:00.000Z",
-    "price": 520,
-    "promo_type": "DISCOUNT",
-    "promo_value": 10
-  }
-]
-```
-
----
-
-# 4) Merchant (Bearer, role: MERCHANT / ADMIN)
-
-## GET `/merchant/me`
-
-商户个人信息（当前登录用户）
-
-**Response 200**
-
-```json
-{
-  "id": "userId",
-  "email": "merchant1@test.com",
-  "role": "MERCHANT",
-  "created_at": "2026-02-08T07:00:00.000Z"
-}
-```
-
----
-
-## GET `/merchant/hotels`
-
-当前商户名下所有酒店（包含 images/tags/rooms/review_summary）
-
-**Response 200**
-
-```json
-[
-  {
-    "id": "hotelId",
-    "name_cn": "测试酒店",
-    "status": "DRAFT",
-    "hotel_images": [],
-    "hotel_tags": [],
-    "rooms": [],
-    "review_summary": null
-  }
-]
-```
-
----
-
-## POST `/merchant/hotels`
-
-创建酒店
-
-**Body**
-
+### 10.3 Merchant（需鉴权，商户/管理员）
+1. `GET /merchant/me`
+2. `GET /merchant/hotels`
+3. `POST /merchant/hotels`
+请求体示例：
 ```json
 {
   "name_cn": "测试酒店",
@@ -455,213 +219,105 @@ JWT 无状态登出，后端返回 ok，前端删除 token 即可
 }
 ```
 
-**Response 200**
-
+4. `PATCH /merchant/hotels/:id`
+5. `POST /merchant/hotels/:id/images`
 ```json
-{
-  "id": "hotelId",
-  "merchant_id": "userId",
-  "status": "DRAFT",
-  "created_at": "2026-02-08T07:00:00.000Z",
-  "updated_at": "2026-02-08T07:00:00.000Z"
-}
+{ "items": [{ "url": "https://example.com/1.jpg", "sort": 0 }] }
 ```
-
----
-
-## PATCH `/merchant/hotels/:id`
-
-更新酒店（会校验 hotel 是否属于当前商户）
-
-**Body**
-
+6. `POST /merchant/hotels/:id/tags`
 ```json
-{
-  "name_cn": "测试酒店(更新)",
-  "name_en": "Test Hotel Updated",
-  "address": "1 Test St",
-  "city": "Sydney",
-  "star": 5,
-  "type": "Resort",
-  "open_year": 2020,
-  "status": "PENDING"
-}
+{ "tags": ["海景", "近地铁"] }
 ```
-
-**Response 200**
-
-```json
-{
-  "id": "hotelId",
-  "status": "PENDING",
-  "reject_reason": null,
-  "updated_at": "2026-02-08T07:10:00.000Z"
-}
-```
-
----
-
-## POST `/merchant/hotels/:id/images`
-
-替换该酒店的所有图片（先 deleteMany 再 createMany）
-
-**Body**
-
-```json
-{
-  "items": [
-    { "url": "https://example.com/1.jpg", "sort": 0 },
-    { "url": "https://example.com/2.jpg", "sort": 1 }
-  ]
-}
-```
-
-**Response 200**
-
-```json
-{ "status": "ok" }
-```
-
----
-
-## POST `/merchant/hotels/:id/tags`
-
-替换该酒店的所有标签（先 deleteMany 再 createMany）
-
-**Body**
-
-```json
-{
-  "tags": ["海景", "近地铁", "早餐"]
-}
-```
-
-**Response 200**
-
-```json
-{ "status": "ok" }
-```
-
----
-
-## POST `/merchant/hotels/:id/rooms`
-
-创建房型（room）
-
-**Body**
-
+7. `POST /merchant/hotels/:id/rooms`
 ```json
 {
   "name": "Deluxe King",
-  "capacity": 2,
+  "max_occupancy": 2,
+  "total_rooms": 8,
   "base_price": 500,
   "refundable": true,
   "breakfast": false
 }
 ```
-
-**Response 200**
-
+8. `POST /merchant/rooms/:roomId/prices`
 ```json
 {
-  "id": "roomId",
-  "hotel_id": "hotelId",
-  "name": "Deluxe King",
-  "capacity": 2,
-  "base_price": 500,
-  "refundable": true,
-  "breakfast": false
-}
-```
-
----
-
-## POST `/merchant/rooms/:roomId/prices`
-
-写入/更新价格日历（按 `room_id + date` upsert）
-
-**Body**
-
-```json
-{
-  "date": "2026-02-02T00:00:00.000Z",
+  "date": "2026-02-10T00:00:00.000Z",
   "price": 520,
   "promo_type": "DISCOUNT",
   "promo_value": 10
 }
 ```
 
-**Response 200**
-
+### 10.4 Admin（需鉴权，管理员）
+1. `GET /admin/hotels/pending`
+2. `POST /admin/hotels/:id/approve`
+3. `POST /admin/hotels/:id/reject`
+```json
+{ "reason": "资料不完整" }
+```
+4. `GET /admin/rooms/:roomId/inventory?from=...&to=...`
+5. `POST /admin/rooms/:roomId/inventory`
 ```json
 {
-  "id": "pcId",
-  "room_id": "roomId",
-  "date": "2026-02-02T00:00:00.000Z",
-  "price": 520,
-  "promo_type": "DISCOUNT",
-  "promo_value": 10
+  "date": "2026-02-10T00:00:00.000Z",
+  "total_rooms": 8,
+  "blocked_rooms": 2
 }
 ```
 
----
+### 10.5 Hotels（公开）
+1. `GET /hotels?city=Sydney&keyword=测试&page=1&limit=20`
+2. `GET /hotels/:id`  
+支持可选参数：`check_in`、`check_out`、`rooms_count`
+3. `GET /hotels/rooms/:roomId/prices?from=...&to=...`
+4. `GET /hotels/rooms/:roomId/availability?check_in=...&check_out=...&rooms_count=1`
 
-# 5) Admin (Bearer, role: ADMIN)
-
-## GET `/admin/hotels/pending`
-
-查看待审核酒店列表（status=PENDING）
-
-**Response 200**
-
-```json
-[
-  {
-    "id": "hotelId",
-    "status": "PENDING",
-    "merchant": { "id": "userId", "email": "merchant1@test.com", "role": "MERCHANT" }
-  }
-]
-```
-
----
-
-## POST `/admin/hotels/:id/approve`
-
-审核通过（status=APPROVED，并清空 reject_reason）
-
-**Response 200**
-
+### 10.6 Bookings（公开下单流程）
+1. `POST /bookings`
 ```json
 {
-  "id": "hotelId",
-  "status": "APPROVED",
-  "reject_reason": null
+  "hotel_id": "h1",
+  "room_id": "r1",
+  "check_in": "2026-02-10T00:00:00.000Z",
+  "check_out": "2026-02-12T00:00:00.000Z",
+  "rooms_count": 1,
+  "guest_count": 2,
+  "contact_name": "Alice",
+  "contact_phone": "18800001111",
+  "user_id": "u1"
 }
 ```
+响应关键字段：`id`、`status`、`total_amount`
 
----
+2. `GET /bookings/:id`
 
-## POST `/admin/hotels/:id/reject`
+3. `PATCH /bookings/:id/cancel`
+响应关键字段：`status: "CANCELLED"`
 
-审核拒绝（status=REJECTED，并写 reject_reason）
+## 11. Postman 使用说明
+项目根目录已提供：`postman.json`
 
-**Body**
+### 11.1 导入
+1. 打开 Postman
+2. `Import` -> 选择仓库根目录的 `postman.json`
+3. 导入后会看到集合：`Easy-Stay Hotel Backend (Full APIs)`
 
-```json
-{ "reason": "资料不全" }
-```
+### 11.2 建议执行顺序（从上到下）
+1. `01 Health`
+2. `02 Auth`（先注册再登录，会自动保存 `merchantToken/adminToken`）
+3. `03 Merchant`（会自动保存 `hotelId/roomId/rejectHotelId`）
+4. `04 Admin`（审核、库存设置）
+5. `05 Public Hotels`
+6. `06 Bookings`（会自动保存 `bookingId`）
 
-**Response 200**
+### 11.3 变量说明（集合变量）
+- `baseUrl`：默认 `http://localhost:3000`
+- `merchantToken` / `adminToken`：登录后自动写入
+- `hotelId` / `roomId` / `rejectHotelId` / `bookingId`：关键请求执行后自动写入
+- `checkIn` / `checkOut`：可手动改为你要测试的日期
 
-```json
-{
-  "id": "hotelId",
-  "status": "REJECTED",
-  "reject_reason": "资料不全"
-}
-```
-
-
-
-
+### 11.4 常见问题
+1. 401 未授权：先执行对应登录请求，确保 token 已写入变量。  
+2. 404 资源不存在：检查 `hotelId/roomId/bookingId` 是否为空或已失效。  
+3. 400 库存不足：先用管理员接口调整库存后再下单。  

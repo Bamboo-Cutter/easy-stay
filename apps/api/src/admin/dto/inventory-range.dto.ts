@@ -1,9 +1,9 @@
 /**
- * 文件说明：该文件定义了请求参数的数据传输对象（DTO）与校验规则。
+ * 文件说明：该文件定义了查询库存日历区间的 DTO。
  */
 import { IsISO8601, IsOptional } from 'class-validator';
 
-export class PriceRangeDto {
+export class InventoryRangeDto {
   @IsOptional()
   @IsISO8601()
   from?: string;
