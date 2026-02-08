@@ -3,9 +3,11 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
-import { HotelModule } from './hotel/hotel.module';
-import { RoomsModule } from './rooms/rooms.module';
+import { HotelsModule } from './hotels/hotels.module';
+import { MerchantModule } from './merchant/merchant.module';
+import { AdminModule } from './admin/admin.module';
 
+console.log('✅ LOADING AppModule FROM:', __filename);
 
 @Module({
   imports: [
@@ -13,8 +15,9 @@ import { RoomsModule } from './rooms/rooms.module';
     PrismaModule,
     HealthModule,
     AuthModule,
-    HotelModule,
-    RoomsModule,
+    HotelsModule,
+    MerchantModule,
+    AdminModule,
   ],
 })
 export class AppModule {}
