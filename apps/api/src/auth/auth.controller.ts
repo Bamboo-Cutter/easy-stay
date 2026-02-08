@@ -24,4 +24,10 @@ export class AuthController {
   me(@Req() req: any) {
     return req.user; // jwt.strategy validate() 返回啥，这里就拿到啥
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('logout')
+  logout() {
+    return this.auth.logout();
+  }
 }

@@ -1,0 +1,59 @@
+import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { user_role } from '@prisma/client';
+import { Roles } from '../common/roles.decorator';
+import { RolesGuard } from '../common/roles.guard';
+import { MerchantService } from './merchant.service';
+import { UpsertHotelDto } from './dto/upsert-hotel.dto';
+import { SetImagesDto } from './dto/set-images.dto';
+import { SetTagsDto } from './dto/set-tags.dto';
+import { CreateRoomDto } from './dto/create-room.dto';
+import { UpsertPriceDto } from './dto/upsert-price.dto';
+
+@UseGuards(AuthGuard('jwt'), RolesGuard)
+@Roles(user_role.MERCHANT, user_role.ADMIN) // 管理员也能看商户接口（可选）
+@Controller('merchant')
+export class MerchantController {
+  constructor(private readonly merchant: MerchantService) {}
+
+  @Get('me')
+  me(@Req() req: any) {
+    return this.merchant.me(req.user.id);
+  }
+
+  @Get('hotels')
+  myHotels(@Req() req: any) {
+    return this.merchant.myHotels(req.user.id);
+  }
+
+  @Post('hotels')
+  createHotel(@Req() req: any, @Body() dto: UpsertHotelDto) {
+    return this.merchant.createHotel(req.user.id, dto);
+  }
+
+  @Patch('hotels/:id')
+  updateHotel(@Req() req: any, @Param('id') id: string, @Body() dto: UpsertHotelDto) {
+    return this.merchant.updateHotel(req.user.id, id, dto);
+  }
+
+  @Post('hotels/:id/images')
+  setImages(@Req() req: any, @Param('id') id: string, @Body() dto: SetImagesDto) {
+    return this.merchant.setImages(req.user.id, id, dto);
+  }
+
+  @Post('hotels/:id/tags')
+  setTags(@Req() req: any, @Param('id') id: string, @Body() dto: SetTagsDto) {
+    return this.merchant.setTags(req.user.id, id, dto);
+  }
+
+  @Post('hotels/:id/rooms')
+  createRoom(@Req() req: any, @Param('id') id: string, @Body() dto: CreateRoomDto) {
+    return this.merchant.createRoom(req.user.id, id, dto);
+  }
+
+  // 房型价格日历写入（按 room + date upsert）
+  @Post('rooms/:roomId/prices')
+  upsertPrice(@Req() req: any, @Param('roomId') roomId: string, @Body() dto: UpsertPriceDto) {
+    return this.merchant.upsertRoomPrice(req.user.id, roomId, dto);
+  }
+}
