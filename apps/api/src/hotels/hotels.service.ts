@@ -6,6 +6,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ListHotelsDto } from './dto/list-hotels.dto';
 import { PriceRangeDto } from './dto/price-range.dto';
 import { StayRangeDto } from './dto/stay-range.dto';
+import { HotelSuggestionDto } from './dto/hotel-suggestion.dto';
+import { HotelCalendarDto } from './dto/hotel-calendar.dto';
 
 @Injectable()
 export class HotelsService {
@@ -13,11 +15,18 @@ export class HotelsService {
 
   // 查询公开酒店列表并返回分页结果
   async list(q: ListHotelsDto) {
-    const skip = (q.page - 1) * q.limit;
-
     const where: any = {
       status: 'APPROVED',
       ...(q.city ? { city: q.city } : {}),
+      ...(q.min_star !== undefined || q.max_star !== undefined
+        ? {
+            star: {
+              ...(q.min_star !== undefined ? { gte: q.min_star } : {}),
+              ...(q.max_star !== undefined ? { lte: q.max_star } : {}),
+            },
+          }
+        : {}),
+      ...(q.min_rating !== undefined ? { review_summary: { is: { rating: { gte: q.min_rating } } } } : {}),
       ...(q.keyword
         ? {
             OR: [
@@ -27,24 +36,114 @@ export class HotelsService {
             ],
           }
         : {}),
+      ...(q.breakfast ? { rooms: { some: { breakfast: true } } } : {}),
+      ...(q.refundable ? { rooms: { some: { refundable: true } } } : {}),
     };
 
-    const [items, total] = await Promise.all([
-      this.prisma.hotels.findMany({
-        where,
-        skip,
-        take: q.limit,
-        orderBy: { created_at: 'desc' },
-        include: {
-          hotel_images: { orderBy: { sort: 'asc' } },
-          hotel_tags: true,
-          review_summary: true,
+    const allItems = await this.prisma.hotels.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      include: {
+        hotel_images: { orderBy: { sort: 'asc' } },
+        hotel_tags: true,
+        review_summary: true,
+        rooms: {
+          orderBy: { base_price: 'asc' },
+          include: {
+            price_calendar: q.check_in && q.check_out
+              ? {
+                  where: {
+                    date: {
+                      gte: this.startOfDay(q.check_in),
+                      lt: this.startOfDay(q.check_out),
+                    },
+                  },
+                }
+              : false,
+            inventory_daily: q.check_in && q.check_out
+              ? {
+                  where: {
+                    date: {
+                      gte: this.startOfDay(q.check_in),
+                      lt: this.startOfDay(q.check_out),
+                    },
+                  },
+                }
+              : false,
+          },
         },
-      }),
-      this.prisma.hotels.count({ where }),
-    ]);
+      },
+    });
 
-    return { items, total, page: q.page, limit: q.limit };
+    const roomsCount = q.rooms_count ?? 1;
+    const withComputed = allItems.map((hotel) => {
+      const roomMetrics = this.computeRoomMetrics(
+        hotel.rooms,
+        q.check_in,
+        q.check_out,
+        roomsCount,
+      );
+      const minNightlyPrice = roomMetrics.length ? Math.min(...roomMetrics.map((x) => x.nightlyPrice)) : null;
+      const minTotalPrice = roomMetrics.length ? Math.min(...roomMetrics.map((x) => x.totalPrice)) : null;
+      const availableCount = roomMetrics.filter((x) => x.isAvailable).length;
+
+      return {
+        ...hotel,
+        min_nightly_price: minNightlyPrice,
+        min_total_price: minTotalPrice,
+        available_room_types: availableCount,
+      };
+    });
+
+    const filtered = withComputed.filter((hotel) => {
+      const price = hotel.min_nightly_price ?? hotel.rooms[0]?.base_price ?? 0;
+      if (q.min_price !== undefined && price < q.min_price) return false;
+      if (q.max_price !== undefined && price > q.max_price) return false;
+      return true;
+    });
+
+    const sorted = filtered.sort((a, b) => {
+      const priceA = a.min_nightly_price ?? a.rooms[0]?.base_price ?? Number.MAX_SAFE_INTEGER;
+      const priceB = b.min_nightly_price ?? b.rooms[0]?.base_price ?? Number.MAX_SAFE_INTEGER;
+      const ratingA = a.review_summary?.rating ?? 0;
+      const ratingB = b.review_summary?.rating ?? 0;
+
+      switch (q.sort) {
+        case 'price_asc':
+          return priceA - priceB;
+        case 'price_desc':
+          return priceB - priceA;
+        case 'rating_desc':
+          return ratingB - ratingA;
+        case 'star_desc':
+          return b.star - a.star;
+        case 'newest':
+          return b.created_at.getTime() - a.created_at.getTime();
+        case 'recommended':
+        default:
+          return (ratingB * 100 - priceB / 100) - (ratingA * 100 - priceA / 100);
+      }
+    });
+
+    const total = sorted.length;
+    const skip = (q.page - 1) * q.limit;
+    const items = sorted.slice(skip, skip + q.limit);
+
+    return {
+      items,
+      total,
+      page: q.page,
+      limit: q.limit,
+      filters: {
+        min_price: q.min_price,
+        max_price: q.max_price,
+        min_star: q.min_star,
+        max_star: q.max_star,
+        min_rating: q.min_rating,
+        breakfast: !!q.breakfast,
+        refundable: !!q.refundable,
+      },
+    };
   }
 
   // 查询单个酒店详情，若未上架或不存在则抛 404
@@ -77,6 +176,177 @@ export class HotelsService {
     );
 
     return { ...hotel, room_price_list: roomPrices.sort((a, b) => a.base_price - b.base_price) };
+  }
+
+  // 搜索建议（城市 + 酒店）
+  async suggestions(q: HotelSuggestionDto) {
+    const keyword = q.keyword?.trim();
+    if (!keyword && !q.city) {
+      return { items: [], total: 0 };
+    }
+
+    const where: any = {
+      status: 'APPROVED',
+      ...(q.city ? { city: q.city } : {}),
+      ...(keyword
+        ? {
+            OR: [
+              { city: { contains: keyword, mode: 'insensitive' } },
+              { name_cn: { contains: keyword, mode: 'insensitive' } },
+              { name_en: { contains: keyword, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    const hotels = await this.prisma.hotels.findMany({
+      where,
+      take: 8,
+      orderBy: { updated_at: 'desc' },
+      include: { review_summary: true },
+    });
+
+    const items = hotels.map((h) => ({
+      id: h.id,
+      city: h.city,
+      label: `${h.name_cn}${h.city ? ` · ${h.city}` : ''}`,
+      rating: h.review_summary?.rating ?? null,
+    }));
+
+    return { items, total: items.length };
+  }
+
+  // 首页推荐酒店（可直接用于首屏卡片）
+  async featured() {
+    const items = await this.prisma.hotels.findMany({
+      where: { status: 'APPROVED' },
+      take: 12,
+      orderBy: [{ updated_at: 'desc' }],
+      include: {
+        hotel_images: { orderBy: { sort: 'asc' } },
+        review_summary: true,
+        rooms: { orderBy: { base_price: 'asc' }, take: 1 },
+      },
+    });
+
+    return items.map((h) => ({
+      id: h.id,
+      name_cn: h.name_cn,
+      name_en: h.name_en,
+      city: h.city,
+      star: h.star,
+      cover: h.hotel_images[0]?.url ?? null,
+      rating: h.review_summary?.rating ?? null,
+      review_count: h.review_summary?.review_count ?? 0,
+      min_price: h.rooms[0]?.base_price ?? null,
+    }));
+  }
+
+  // 首页 Banner（选取最新上架酒店生成广告卡）
+  async banners() {
+    const items = await this.prisma.hotels.findMany({
+      where: { status: 'APPROVED' },
+      take: 5,
+      orderBy: [{ updated_at: 'desc' }],
+      include: {
+        hotel_images: { orderBy: { sort: 'asc' }, take: 1 },
+        review_summary: true,
+        rooms: { orderBy: { base_price: 'asc' }, take: 1 },
+      },
+    });
+
+    return items.map((h) => ({
+      id: h.id,
+      title: h.name_cn,
+      subtitle: `${h.city} · ${(h.review_summary?.rating ?? 0).toFixed(1)}分`,
+      image: h.hotel_images[0]?.url ?? null,
+      cta: '立即查看',
+      min_price: h.rooms[0]?.base_price ?? null,
+    }));
+  }
+
+  // 列表页筛选元信息
+  async filterMetadata(city?: string) {
+    const rooms = await this.prisma.rooms.findMany({
+      where: {
+        hotel: {
+          status: 'APPROVED',
+          ...(city ? { city } : {}),
+        },
+      },
+      select: {
+        base_price: true,
+        breakfast: true,
+        refundable: true,
+        hotel: {
+          select: {
+            id: true,
+            star: true,
+          },
+        },
+      },
+    });
+
+    const tags = await this.prisma.hotel_tags.findMany({
+      where: {
+        hotel: {
+          status: 'APPROVED',
+          ...(city ? { city } : {}),
+        },
+      },
+      select: { tag: true },
+    });
+
+    const summaries = await this.prisma.review_summary.findMany({
+      where: {
+        hotel: {
+          status: 'APPROVED',
+          ...(city ? { city } : {}),
+        },
+      },
+      select: { rating: true },
+    });
+
+    const prices = rooms.map((r) => r.base_price);
+    const stars = new Map<number, number>();
+    const breakfastCount = rooms.filter((r) => r.breakfast).length;
+    const refundableCount = rooms.filter((r) => r.refundable).length;
+
+    for (const r of rooms) {
+      stars.set(r.hotel.star, (stars.get(r.hotel.star) ?? 0) + 1);
+    }
+
+    const tagCounter = new Map<string, number>();
+    for (const t of tags) {
+      tagCounter.set(t.tag, (tagCounter.get(t.tag) ?? 0) + 1);
+    }
+
+    const ratingBands = {
+      '6_plus': summaries.filter((s) => s.rating >= 6).length,
+      '7_plus': summaries.filter((s) => s.rating >= 7).length,
+      '8_plus': summaries.filter((s) => s.rating >= 8).length,
+      '9_plus': summaries.filter((s) => s.rating >= 9).length,
+    };
+
+    return {
+      city: city ?? null,
+      price_range: {
+        min: prices.length ? Math.min(...prices) : 0,
+        max: prices.length ? Math.max(...prices) : 0,
+      },
+      star_counts: Array.from(stars.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([star, count]) => ({ star, count })),
+      room_feature_counts: {
+        breakfast: breakfastCount,
+        refundable: refundableCount,
+      },
+      rating_bands: ratingBands,
+      popular_tags: Array.from(tagCounter.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 12)
+        .map(([tag, count]) => ({ tag, count })),
+    };
   }
 
   // 查询指定房型的价格日历，可按时间区间过滤
@@ -126,6 +396,231 @@ export class HotelsService {
       available_rooms: minAvailable,
       is_available: minAvailable >= requiredRooms,
     };
+  }
+
+  // 某酒店在指定入住区间内的房型报价
+  async offers(hotelId: string, q: StayRangeDto) {
+    const hotel = await this.prisma.hotels.findFirst({
+      where: { id: hotelId, status: 'APPROVED' },
+      include: {
+        rooms: {
+          orderBy: { base_price: 'asc' },
+          include: {
+            price_calendar: q.check_in && q.check_out
+              ? {
+                  where: {
+                    date: {
+                      gte: this.startOfDay(q.check_in),
+                      lt: this.startOfDay(q.check_out),
+                    },
+                  },
+                  orderBy: { date: 'asc' },
+                }
+              : false,
+            inventory_daily: q.check_in && q.check_out
+              ? {
+                  where: {
+                    date: {
+                      gte: this.startOfDay(q.check_in),
+                      lt: this.startOfDay(q.check_out),
+                    },
+                  },
+                  orderBy: { date: 'asc' },
+                }
+              : false,
+          },
+        },
+      },
+    });
+    if (!hotel) throw new NotFoundException('Hotel not found');
+
+    const roomsCount = q.rooms_count ?? 1;
+    const metrics = this.computeRoomMetrics(hotel.rooms, q.check_in, q.check_out, roomsCount);
+
+    return {
+      hotel_id: hotel.id,
+      check_in: q.check_in ?? null,
+      check_out: q.check_out ?? null,
+      rooms_count: roomsCount,
+      items: metrics.map((m) => ({
+        room_id: m.room.id,
+        room_name: m.room.name,
+        base_price: m.room.base_price,
+        refundable: m.room.refundable,
+        breakfast: m.room.breakfast,
+        max_occupancy: m.room.max_occupancy,
+        nightly_price: m.nightlyPrice,
+        total_price: m.totalPrice,
+        nights: m.nights,
+        available_rooms: m.availableRooms,
+        is_available: m.isAvailable,
+      })),
+    };
+  }
+
+  // 酒店月历价格（用于日期面板）
+  async calendar(hotelId: string, q: HotelCalendarDto) {
+    const hotel = await this.prisma.hotels.findFirst({
+      where: { id: hotelId, status: 'APPROVED' },
+      include: { rooms: { select: { id: true, base_price: true, total_rooms: true } } },
+    });
+    if (!hotel) throw new NotFoundException('Hotel not found');
+
+    const baseMonth = q.month ? `${q.month}-01T00:00:00.000Z` : new Date().toISOString();
+    const monthStart = this.startOfDay(baseMonth);
+    monthStart.setUTCDate(1);
+    const nextMonthStart = new Date(monthStart);
+    nextMonthStart.setUTCMonth(nextMonthStart.getUTCMonth() + 1);
+
+    const roomIds = hotel.rooms.map((r) => r.id);
+    const [priceRows, invRows] = await Promise.all([
+      this.prisma.price_calendar.findMany({
+        where: {
+          room_id: { in: roomIds },
+          date: { gte: monthStart, lt: nextMonthStart },
+        },
+      }),
+      this.prisma.room_inventory_daily.findMany({
+        where: {
+          room_id: { in: roomIds },
+          date: { gte: monthStart, lt: nextMonthStart },
+        },
+      }),
+    ]);
+
+    const pricesByDate = new Map<string, number[]>();
+    for (const row of priceRows) {
+      const key = row.date.toISOString().slice(0, 10);
+      const arr = pricesByDate.get(key) ?? [];
+      arr.push(row.price);
+      pricesByDate.set(key, arr);
+    }
+
+    const invByDate = new Map<string, number[]>();
+    for (const row of invRows) {
+      const key = row.date.toISOString().slice(0, 10);
+      const available = row.total_rooms - row.reserved_rooms - row.blocked_rooms;
+      const arr = invByDate.get(key) ?? [];
+      arr.push(available);
+      invByDate.set(key, arr);
+    }
+
+    const days: Array<{ date: string; min_price: number | null; is_available: boolean }> = [];
+    const cursor = new Date(monthStart);
+    while (cursor < nextMonthStart) {
+      const key = cursor.toISOString().slice(0, 10);
+      const dayPrices = pricesByDate.get(key) ?? [];
+      const dayInv = invByDate.get(key) ?? [];
+      days.push({
+        date: key,
+        min_price: dayPrices.length ? Math.min(...dayPrices) : null,
+        is_available: dayInv.length ? dayInv.some((x) => x > 0) : true,
+      });
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    return { hotel_id: hotelId, month: monthStart.toISOString().slice(0, 7), days };
+  }
+
+  // 酒店评分摘要（无独立点评表时由 summary 派生）
+  async reviewsSummary(hotelId: string) {
+    const hotel = await this.prisma.hotels.findFirst({
+      where: { id: hotelId, status: 'APPROVED' },
+      include: { review_summary: true },
+    });
+    if (!hotel) throw new NotFoundException('Hotel not found');
+
+    const rating = hotel.review_summary?.rating ?? 0;
+    const count = hotel.review_summary?.review_count ?? 0;
+
+    const clamp = (x: number, min: number, max: number) => Math.max(min, Math.min(max, x));
+    return {
+      hotel_id: hotelId,
+      rating,
+      review_count: count,
+      grade: this.ratingLabel(rating),
+      dimensions: {
+        cleanliness: Number(clamp(rating + 0.2, 0, 10).toFixed(1)),
+        service: Number(clamp(rating - 0.3, 0, 10).toFixed(1)),
+        facilities: Number(clamp(rating - 0.1, 0, 10).toFixed(1)),
+        location: Number(clamp(rating + 0.4, 0, 10).toFixed(1)),
+      },
+      distribution: {
+        '9_plus': Math.round(count * 0.25),
+        '8_plus': Math.round(count * 0.3),
+        '7_plus': Math.round(count * 0.3),
+        '6_plus': Math.max(0, count - Math.round(count * 0.25) - Math.round(count * 0.3) - Math.round(count * 0.3)),
+      },
+      ai_summary: this.aiReviewSummary(hotel.city, rating),
+    };
+  }
+
+  private computeRoomMetrics(
+    rooms: Array<{
+      id: string;
+      name: string;
+      base_price: number;
+      total_rooms: number;
+      max_occupancy: number;
+      refundable: boolean;
+      breakfast: boolean;
+      price_calendar?: Array<{ date: Date; price: number }>;
+      inventory_daily?: Array<{ date: Date; total_rooms: number; reserved_rooms: number; blocked_rooms: number }>;
+    }>,
+    checkInText?: string,
+    checkOutText?: string,
+    requiredRooms = 1,
+  ) {
+    const hasStay = !!checkInText && !!checkOutText;
+    const checkIn = hasStay ? this.startOfDay(checkInText!) : null;
+    const checkOut = hasStay ? this.startOfDay(checkOutText!) : null;
+    const nights = checkIn && checkOut ? this.getStayDates(checkIn, checkOut) : [];
+
+    return rooms.map((room) => {
+      const priceMap = new Map((room.price_calendar ?? []).map((x) => [x.date.getTime(), x.price]));
+      const invMap = new Map((room.inventory_daily ?? []).map((x) => [x.date.getTime(), x]));
+      const nightly = nights.length
+        ? Math.round(
+            nights.reduce((sum, d) => sum + (priceMap.get(d.getTime()) ?? room.base_price), 0) / nights.length,
+          )
+        : room.base_price;
+      const total = nights.length
+        ? nights.reduce((sum, d) => sum + (priceMap.get(d.getTime()) ?? room.base_price), 0) * requiredRooms
+        : room.base_price * requiredRooms;
+
+      let minAvailable = room.total_rooms;
+      if (nights.length) {
+        minAvailable = Number.MAX_SAFE_INTEGER;
+        for (const d of nights) {
+          const inv = invMap.get(d.getTime());
+          const available = (inv?.total_rooms ?? room.total_rooms) - (inv?.reserved_rooms ?? 0) - (inv?.blocked_rooms ?? 0);
+          if (available < minAvailable) minAvailable = available;
+        }
+        if (!Number.isFinite(minAvailable)) minAvailable = room.total_rooms;
+      }
+
+      return {
+        room,
+        nights: nights.length || 1,
+        nightlyPrice: nightly,
+        totalPrice: total,
+        availableRooms: minAvailable,
+        isAvailable: minAvailable >= requiredRooms,
+      };
+    });
+  }
+
+  private ratingLabel(rating: number) {
+    if (rating >= 9) return '非常好';
+    if (rating >= 8) return '很好';
+    if (rating >= 7) return '好';
+    if (rating >= 6) return '愉快';
+    return '一般';
+  }
+
+  private aiReviewSummary(city: string, rating: number) {
+    const grade = this.ratingLabel(rating);
+    return `酒店位于${city}区域，整体评价${grade}。住客普遍认可卫生、地理位置与性价比，适合休闲与短住。`;
   }
 
   private startOfDay(value: string | Date) {

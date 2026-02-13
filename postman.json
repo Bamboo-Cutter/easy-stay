@@ -1,56 +1,43 @@
 {
   "info": {
-    "_postman_id": "fbadf3ac-7a09-4bf6-a335-c57e4c4b3001",
-    "name": "Easy-Stay Hotel Backend (Full APIs)",
+    "_postman_id": "4c298d6d-b79e-4a66-aea0-2e70565f3cde",
+    "name": "Easy-Stay Hotel Backend (All APIs with Scripts)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:3000" },
-    { "key": "merchantEmail", "value": "merchant_demo@test.com" },
-    { "key": "adminEmail", "value": "admin_demo@test.com" },
-    { "key": "password", "value": "123456" },
-    { "key": "merchantToken", "value": "" },
-    { "key": "adminToken", "value": "" },
-    { "key": "hotelId", "value": "" },
-    { "key": "roomId", "value": "" },
-    { "key": "rejectHotelId", "value": "" },
-    { "key": "bookingId", "value": "" },
-    { "key": "checkIn", "value": "2026-02-10T00:00:00.000Z" },
-    { "key": "checkOut", "value": "2026-02-12T00:00:00.000Z" }
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "merchant_email", "value": "merchant1@demo.com" },
+    { "key": "merchant_password", "value": "Merchant12345!" },
+    { "key": "admin_email", "value": "admin@demo.com" },
+    { "key": "admin_password", "value": "Admin12345!" },
+    { "key": "merchant_token", "value": "" },
+    { "key": "admin_token", "value": "" },
+    { "key": "hotel_id", "value": "" },
+    { "key": "room_id", "value": "" },
+    { "key": "booking_id", "value": "" },
+    { "key": "reject_hotel_id", "value": "" },
+    { "key": "check_in", "value": "2026-02-10T00:00:00.000Z" },
+    { "key": "check_out", "value": "2026-02-12T00:00:00.000Z" },
+    { "key": "inventory_date", "value": "2026-02-10T00:00:00.000Z" }
   ],
   "item": [
     {
-      "name": "01 Health",
-      "item": [
-        {
-          "name": "GET /health",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "02 Auth",
+      "name": "01 Auth",
       "item": [
         {
           "name": "POST /auth/register (MERCHANT)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{merchantEmail}}\",\n  \"password\": \"{{password}}\",\n  \"role\": \"MERCHANT\"\n}"
+              "raw": "{\n  \"email\": \"merchant_new@demo.com\",\n  \"password\": \"Merchant12345!\",\n  \"role\": \"MERCHANT\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
               "path": ["auth", "register"]
             }
           }
@@ -59,96 +46,116 @@
           "name": "POST /auth/register (ADMIN)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\",\n  \"role\": \"ADMIN\"\n}"
+              "raw": "{\n  \"email\": \"admin_new@demo.com\",\n  \"password\": \"Admin12345!\",\n  \"role\": \"ADMIN\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/register",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
               "path": ["auth", "register"]
             }
           }
         },
         {
-          "name": "POST /auth/login (MERCHANT -> save merchantToken)",
+          "name": "POST /auth/login (MERCHANT -> save merchant_token)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.access_token) pm.collectionVariables.set('merchantToken', json.access_token);",
-                  "pm.test('saved merchantToken', function () { pm.expect(pm.collectionVariables.get('merchantToken')).to.be.a('string'); });"
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "if (data && data.access_token) {",
+                  "  pm.collectionVariables.set('merchant_token', data.access_token);",
+                  "  pm.test('merchant_token saved', function () {",
+                  "    pm.expect(pm.collectionVariables.get('merchant_token')).to.be.a('string').and.not.empty;",
+                  "  });",
+                  "}"
                 ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{merchantEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+              "raw": "{\n  \"email\": \"{{merchant_email}}\",\n  \"password\": \"{{merchant_password}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
               "path": ["auth", "login"]
             }
           }
         },
         {
-          "name": "POST /auth/login (ADMIN -> save adminToken)",
+          "name": "POST /auth/login (ADMIN -> save admin_token)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.access_token) pm.collectionVariables.set('adminToken', json.access_token);",
-                  "pm.test('saved adminToken', function () { pm.expect(pm.collectionVariables.get('adminToken')).to.be.a('string'); });"
+                  "pm.test('status is 201', function () { pm.response.to.have.status(201); });",
+                  "const data = pm.response.json();",
+                  "if (data && data.access_token) {",
+                  "  pm.collectionVariables.set('admin_token', data.access_token);",
+                  "  pm.test('admin_token saved', function () {",
+                  "    pm.expect(pm.collectionVariables.get('admin_token')).to.be.a('string').and.not.empty;",
+                  "  });",
+                  "}"
                 ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
               "path": ["auth", "login"]
             }
           }
         },
         {
-          "name": "GET /auth/me (MERCHANT)",
+          "name": "GET /auth/me",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{merchantToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/auth/me",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/auth/me",
+              "host": ["{{base_url}}"],
               "path": ["auth", "me"]
             }
           }
         },
         {
-          "name": "POST /auth/logout (MERCHANT)",
+          "name": "POST /auth/logout",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{merchantToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/auth/logout",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
               "path": ["auth", "logout"]
             }
           }
@@ -156,43 +163,66 @@
       ]
     },
     {
-      "name": "03 Merchant",
+      "name": "02 Merchant",
       "item": [
         {
           "name": "GET /merchant/me",
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{merchantToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/merchant/me",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/merchant/me",
+              "host": ["{{base_url}}"],
               "path": ["merchant", "me"]
             }
           }
         },
         {
           "name": "GET /merchant/hotels",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (Array.isArray(data) && data.length > 0 && data[0].id) {",
+                  "  pm.collectionVariables.set('hotel_id', data[0].id);",
+                  "  if (Array.isArray(data[0].rooms) && data[0].rooms.length > 0 && data[0].rooms[0].id) {",
+                  "    pm.collectionVariables.set('room_id', data[0].rooms[0].id);",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{merchantToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/merchant/hotels",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/merchant/hotels",
+              "host": ["{{base_url}}"],
               "path": ["merchant", "hotels"]
             }
           }
         },
         {
-          "name": "POST /merchant/hotels (save hotelId)",
+          "name": "POST /merchant/hotels (save hotel_id)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.id) pm.collectionVariables.set('hotelId', json.id);",
-                  "pm.test('saved hotelId', function () { pm.expect(pm.collectionVariables.get('hotelId')).to.be.a('string'); });"
+                  "const data = pm.response.json();",
+                  "if (data && data.id) {",
+                  "  pm.collectionVariables.set('hotel_id', data.id);",
+                  "  pm.collectionVariables.set('reject_hotel_id', data.id);",
+                  "}"
                 ]
               }
             }
@@ -200,106 +230,17 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{merchantToken}}" },
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name_cn\": \"测试酒店\",\n  \"name_en\": \"Test Hotel\",\n  \"address\": \"1 Test St\",\n  \"city\": \"Sydney\",\n  \"star\": 5,\n  \"type\": \"Resort\",\n  \"open_year\": 2020,\n  \"status\": \"DRAFT\"\n}"
+              "raw": "{\n  \"name_cn\": \"Postman测试酒店\",\n  \"name_en\": \"Postman Test Hotel\",\n  \"address\": \"100 Postman Road\",\n  \"city\": \"Sydney\",\n  \"star\": 4,\n  \"type\": \"Business\",\n  \"open_year\": 2020,\n  \"status\": \"DRAFT\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/merchant/hotels",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/merchant/hotels",
+              "host": ["{{base_url}}"],
               "path": ["merchant", "hotels"]
-            }
-          }
-        },
-        {
-          "name": "POST /merchant/hotels/:id/images",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{merchantToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"items\": [\n    { \"url\": \"https://example.com/1.jpg\", \"sort\": 0 },\n    { \"url\": \"https://example.com/2.jpg\", \"sort\": 1 }\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/merchant/hotels/{{hotelId}}/images",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchant", "hotels", "{{hotelId}}", "images"]
-            }
-          }
-        },
-        {
-          "name": "POST /merchant/hotels/:id/tags",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{merchantToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"tags\": [\"海景\", \"近地铁\"]\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/merchant/hotels/{{hotelId}}/tags",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchant", "hotels", "{{hotelId}}", "tags"]
-            }
-          }
-        },
-        {
-          "name": "POST /merchant/hotels/:id/rooms (save roomId)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.id) pm.collectionVariables.set('roomId', json.id);",
-                  "pm.test('saved roomId', function () { pm.expect(pm.collectionVariables.get('roomId')).to.be.a('string'); });"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{merchantToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Deluxe King\",\n  \"max_occupancy\": 2,\n  \"total_rooms\": 8,\n  \"base_price\": 500,\n  \"refundable\": true,\n  \"breakfast\": false\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/merchant/hotels/{{hotelId}}/rooms",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchant", "hotels", "{{hotelId}}", "rooms"]
-            }
-          }
-        },
-        {
-          "name": "POST /merchant/rooms/:roomId/prices",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Authorization", "value": "Bearer {{merchantToken}}" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"date\": \"{{checkIn}}\",\n  \"price\": 520,\n  \"promo_type\": \"DISCOUNT\",\n  \"promo_value\": 10\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/merchant/rooms/{{roomId}}/prices",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchant", "rooms", "{{roomId}}", "prices"]
             }
           }
         },
@@ -308,30 +249,70 @@
           "request": {
             "method": "PATCH",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{merchantToken}}" },
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name_cn\": \"测试酒店\",\n  \"name_en\": \"Test Hotel\",\n  \"address\": \"1 Test St\",\n  \"city\": \"Sydney\",\n  \"star\": 5,\n  \"type\": \"Resort\",\n  \"open_year\": 2020,\n  \"status\": \"PENDING\"\n}"
+              "raw": "{\n  \"name_cn\": \"Postman测试酒店\",\n  \"name_en\": \"Postman Test Hotel\",\n  \"address\": \"100 Postman Road\",\n  \"city\": \"Sydney\",\n  \"star\": 4,\n  \"type\": \"Business\",\n  \"open_year\": 2020,\n  \"status\": \"PENDING\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/merchant/hotels/{{hotelId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchant", "hotels", "{{hotelId}}"]
+              "raw": "{{base_url}}/merchant/hotels/{{hotel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["merchant", "hotels", "{{hotel_id}}"]
             }
           }
         },
         {
-          "name": "POST /merchant/hotels (create rejectHotelId)",
+          "name": "POST /merchant/hotels/:id/images",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"url\": \"https://picsum.photos/seed/postman-1/1200/800\", \"sort\": 0 },\n    { \"url\": \"https://picsum.photos/seed/postman-2/1200/800\", \"sort\": 1 }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/merchant/hotels/{{hotel_id}}/images",
+              "host": ["{{base_url}}"],
+              "path": ["merchant", "hotels", "{{hotel_id}}", "images"]
+            }
+          }
+        },
+        {
+          "name": "POST /merchant/hotels/:id/tags",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tags\": [\"近地铁\", \"含早餐\", \"商务\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/merchant/hotels/{{hotel_id}}/tags",
+              "host": ["{{base_url}}"],
+              "path": ["merchant", "hotels", "{{hotel_id}}", "tags"]
+            }
+          }
+        },
+        {
+          "name": "POST /merchant/hotels/:id/rooms (save room_id)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.id) pm.collectionVariables.set('rejectHotelId', json.id);"
+                  "const data = pm.response.json();",
+                  "if (data && data.id) {",
+                  "  pm.collectionVariables.set('room_id', data.id);",
+                  "}"
                 ]
               }
             }
@@ -339,33 +320,68 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{merchantToken}}" },
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name_cn\": \"待拒绝酒店\",\n  \"name_en\": \"Reject Hotel\",\n  \"address\": \"2 Test St\",\n  \"city\": \"Sydney\",\n  \"star\": 4,\n  \"type\": \"Business\",\n  \"open_year\": 2021,\n  \"status\": \"PENDING\"\n}"
+              "raw": "{\n  \"name\": \"豪华大床房\",\n  \"max_occupancy\": 2,\n  \"total_rooms\": 20,\n  \"base_price\": 19900,\n  \"refundable\": true,\n  \"breakfast\": true\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/merchant/hotels",
-              "host": ["{{baseUrl}}"],
-              "path": ["merchant", "hotels"]
+              "raw": "{{base_url}}/merchant/hotels/{{hotel_id}}/rooms",
+              "host": ["{{base_url}}"],
+              "path": ["merchant", "hotels", "{{hotel_id}}", "rooms"]
+            }
+          }
+        },
+        {
+          "name": "POST /merchant/rooms/:roomId/prices",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{merchant_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"{{check_in}}\",\n  \"price\": 20900,\n  \"promo_type\": \"DISCOUNT\",\n  \"promo_value\": 10\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/merchant/rooms/{{room_id}}/prices",
+              "host": ["{{base_url}}"],
+              "path": ["merchant", "rooms", "{{room_id}}", "prices"]
             }
           }
         }
       ]
     },
     {
-      "name": "04 Admin",
+      "name": "03 Admin",
       "item": [
         {
           "name": "GET /admin/hotels/pending",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (Array.isArray(data) && data.length > 0 && data[0].id) {",
+                  "  pm.collectionVariables.set('reject_hotel_id', data[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/admin/hotels/pending",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/admin/hotels/pending",
+              "host": ["{{base_url}}"],
               "path": ["admin", "hotels", "pending"]
             }
           }
@@ -375,14 +391,17 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "body": { "mode": "raw", "raw": "{}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
             "url": {
-              "raw": "{{baseUrl}}/admin/hotels/{{hotelId}}/approve",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "hotels", "{{hotelId}}", "approve"]
+              "raw": "{{base_url}}/admin/hotels/{{hotel_id}}/approve",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "hotels", "{{hotel_id}}", "approve"]
             }
           }
         },
@@ -391,7 +410,7 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
@@ -399,9 +418,27 @@
               "raw": "{\n  \"reason\": \"资料不完整\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/admin/hotels/{{rejectHotelId}}/reject",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "hotels", "{{rejectHotelId}}", "reject"]
+              "raw": "{{base_url}}/admin/hotels/{{reject_hotel_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "hotels", "{{reject_hotel_id}}", "reject"]
+            }
+          }
+        },
+        {
+          "name": "GET /admin/rooms/:roomId/inventory",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/rooms/{{room_id}}/inventory?from={{check_in}}&to={{check_out}}",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "rooms", "{{room_id}}", "inventory"],
+              "query": [
+                { "key": "from", "value": "{{check_in}}" },
+                { "key": "to", "value": "{{check_out}}" }
+              ]
             }
           }
         },
@@ -410,53 +447,51 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"date\": \"{{checkIn}}\",\n  \"total_rooms\": 8,\n  \"blocked_rooms\": 2\n}"
+              "raw": "{\n  \"date\": \"{{inventory_date}}\",\n  \"total_rooms\": 20,\n  \"blocked_rooms\": 2\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/admin/rooms/{{roomId}}/inventory",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "rooms", "{{roomId}}", "inventory"]
-            }
-          }
-        },
-        {
-          "name": "GET /admin/rooms/:roomId/inventory",
-          "request": {
-            "method": "GET",
-            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
-            "url": {
-              "raw": "{{baseUrl}}/admin/rooms/{{roomId}}/inventory?from={{checkIn}}&to={{checkIn}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["admin", "rooms", "{{roomId}}", "inventory"],
-              "query": [
-                { "key": "from", "value": "{{checkIn}}" },
-                { "key": "to", "value": "{{checkIn}}" }
-              ]
+              "raw": "{{base_url}}/admin/rooms/{{room_id}}/inventory",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "rooms", "{{room_id}}", "inventory"]
             }
           }
         }
       ]
     },
     {
-      "name": "05 Public Hotels",
+      "name": "04 Public Hotels",
       "item": [
         {
-          "name": "GET /hotels",
+          "name": "GET /hotels (save first hotel_id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data && Array.isArray(data.items) && data.items.length > 0 && data.items[0].id) {",
+                  "  pm.collectionVariables.set('hotel_id', data.items[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/hotels?city=Sydney&keyword=测试&page=1&limit=20",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/hotels?city=Sydney&keyword=易宿&page=1&limit=20",
+              "host": ["{{base_url}}"],
               "path": ["hotels"],
               "query": [
                 { "key": "city", "value": "Sydney" },
-                { "key": "keyword", "value": "测试" },
+                { "key": "keyword", "value": "易宿" },
                 { "key": "page", "value": "1" },
                 { "key": "limit", "value": "20" }
               ]
@@ -464,29 +499,43 @@
           }
         },
         {
-          "name": "GET /hotels/:id",
+          "name": "GET /hotels/:id (save first room_id)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data && Array.isArray(data.rooms) && data.rooms.length > 0 && data.rooms[0].id) {",
+                  "  pm.collectionVariables.set('room_id', data.rooms[0].id);",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/hotels/{{hotelId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["hotels", "{{hotelId}}"]
+              "raw": "{{base_url}}/hotels/{{hotel_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["hotels", "{{hotel_id}}"]
             }
           }
         },
         {
-          "name": "GET /hotels/:id with stay range",
+          "name": "GET /hotels/:id?check_in&check_out&rooms_count",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/hotels/{{hotelId}}?check_in={{checkIn}}&check_out={{checkOut}}&rooms_count=1",
-              "host": ["{{baseUrl}}"],
-              "path": ["hotels", "{{hotelId}}"],
+              "raw": "{{base_url}}/hotels/{{hotel_id}}?check_in={{check_in}}&check_out={{check_out}}&rooms_count=1",
+              "host": ["{{base_url}}"],
+              "path": ["hotels", "{{hotel_id}}"],
               "query": [
-                { "key": "check_in", "value": "{{checkIn}}" },
-                { "key": "check_out", "value": "{{checkOut}}" },
+                { "key": "check_in", "value": "{{check_in}}" },
+                { "key": "check_out", "value": "{{check_out}}" },
                 { "key": "rooms_count", "value": "1" }
               ]
             }
@@ -498,12 +547,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/hotels/rooms/{{roomId}}/prices?from={{checkIn}}&to={{checkOut}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["hotels", "rooms", "{{roomId}}", "prices"],
+              "raw": "{{base_url}}/hotels/rooms/{{room_id}}/prices?from={{check_in}}&to={{check_out}}",
+              "host": ["{{base_url}}"],
+              "path": ["hotels", "rooms", "{{room_id}}", "prices"],
               "query": [
-                { "key": "from", "value": "{{checkIn}}" },
-                { "key": "to", "value": "{{checkOut}}" }
+                { "key": "from", "value": "{{check_in}}" },
+                { "key": "to", "value": "{{check_out}}" }
               ]
             }
           }
@@ -514,12 +563,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/hotels/rooms/{{roomId}}/availability?check_in={{checkIn}}&check_out={{checkOut}}&rooms_count=1",
-              "host": ["{{baseUrl}}"],
-              "path": ["hotels", "rooms", "{{roomId}}", "availability"],
+              "raw": "{{base_url}}/hotels/rooms/{{room_id}}/availability?check_in={{check_in}}&check_out={{check_out}}&rooms_count=1",
+              "host": ["{{base_url}}"],
+              "path": ["hotels", "rooms", "{{room_id}}", "availability"],
               "query": [
-                { "key": "check_in", "value": "{{checkIn}}" },
-                { "key": "check_out", "value": "{{checkOut}}" },
+                { "key": "check_in", "value": "{{check_in}}" },
+                { "key": "check_out", "value": "{{check_out}}" },
                 { "key": "rooms_count", "value": "1" }
               ]
             }
@@ -528,33 +577,36 @@
       ]
     },
     {
-      "name": "06 Bookings",
+      "name": "05 Bookings",
       "item": [
         {
-          "name": "POST /bookings (save bookingId)",
+          "name": "POST /bookings (save booking_id)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "const json = pm.response.json();",
-                  "if (json.id) pm.collectionVariables.set('bookingId', json.id);",
-                  "pm.test('saved bookingId', function () { pm.expect(pm.collectionVariables.get('bookingId')).to.be.a('string'); });"
+                  "const data = pm.response.json();",
+                  "if (data && data.id) {",
+                  "  pm.collectionVariables.set('booking_id', data.id);",
+                  "}"
                 ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"hotel_id\": \"{{hotelId}}\",\n  \"room_id\": \"{{roomId}}\",\n  \"check_in\": \"{{checkIn}}\",\n  \"check_out\": \"{{checkOut}}\",\n  \"rooms_count\": 1,\n  \"guest_count\": 2,\n  \"contact_name\": \"Alice\",\n  \"contact_phone\": \"18800001111\"\n}"
+              "raw": "{\n  \"hotel_id\": \"{{hotel_id}}\",\n  \"room_id\": \"{{room_id}}\",\n  \"check_in\": \"{{check_in}}\",\n  \"check_out\": \"{{check_out}}\",\n  \"rooms_count\": 1,\n  \"guest_count\": 2,\n  \"contact_name\": \"Postman User\",\n  \"contact_phone\": \"13800138000\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/bookings",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/bookings",
+              "host": ["{{base_url}}"],
               "path": ["bookings"]
             }
           }
@@ -565,9 +617,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/bookings/{{bookingId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["bookings", "{{bookingId}}"]
+              "raw": "{{base_url}}/bookings/{{booking_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", "{{booking_id}}"]
             }
           }
         },
@@ -577,9 +629,26 @@
             "method": "PATCH",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/bookings/{{bookingId}}/cancel",
-              "host": ["{{baseUrl}}"],
-              "path": ["bookings", "{{bookingId}}", "cancel"]
+              "raw": "{{base_url}}/bookings/{{booking_id}}/cancel",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", "{{booking_id}}", "cancel"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
             }
           }
         }

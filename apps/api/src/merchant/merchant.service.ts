@@ -1,9 +1,11 @@
 /**
  * 文件说明：该文件定义了核心业务逻辑与数据库访问流程。
  */
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { hotel_status } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpsertHotelDto } from './dto/upsert-hotel.dto';
+import { CreateHotelFullDto } from './dto/create-hotel-full.dto';
 import { SetImagesDto } from './dto/set-images.dto';
 import { SetTagsDto } from './dto/set-tags.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -12,6 +14,11 @@ import { UpsertPriceDto } from './dto/upsert-price.dto';
 @Injectable()
 export class MerchantService {
   constructor(private prisma: PrismaService) {}
+  private readonly merchantAllowedStatuses = new Set<hotel_status>([
+    hotel_status.DRAFT,
+    hotel_status.PENDING,
+    hotel_status.OFFLINE,
+  ]);
 
   // 查询当前登录商家的基础资料
   async me(userId: string) {
@@ -37,8 +44,34 @@ export class MerchantService {
     });
   }
 
-  // 创建酒店记录
-  async createHotel(userId: string, dto: UpsertHotelDto) {
+  // 查询当前商家名下单个酒店详情并校验所有权
+  async myHotelDetail(userId: string, hotelId: string) {
+    const hotel = await this.prisma.hotels.findUnique({
+      where: { id: hotelId },
+      include: {
+        hotel_images: { orderBy: { sort: 'asc' } },
+        hotel_tags: true,
+        nearby_points: true,
+        review_summary: true,
+        rooms: {
+          orderBy: { name: 'asc' },
+          include: {
+            price_calendar: { orderBy: { date: 'asc' } },
+            inventory_daily: { orderBy: { date: 'asc' } },
+          },
+        },
+      },
+    });
+
+    if (!hotel) throw new NotFoundException('Hotel not found');
+    if (hotel.merchant_id !== userId) throw new ForbiddenException('Not your hotel');
+    return hotel;
+  }
+
+  // 创建酒店记录（支持关联子表一体化写入）
+  async createHotel(userId: string, dto: CreateHotelFullDto) {
+    this.assertMerchantStatus(dto.status);
+    const tags = [...new Set(dto.tags ?? [])];
     return this.prisma.hotels.create({
       data: {
         merchant_id: userId,
@@ -50,6 +83,83 @@ export class MerchantService {
         type: dto.type,
         open_year: dto.open_year,
         status: dto.status ?? 'DRAFT',
+        ...(dto.images?.length
+          ? {
+              hotel_images: {
+                create: dto.images.map((x, index) => ({
+                  url: x.url,
+                  sort: x.sort ?? index,
+                })),
+              },
+            }
+          : {}),
+        ...(tags.length
+          ? {
+              hotel_tags: {
+                create: tags.map((tag) => ({ tag })),
+              },
+            }
+          : {}),
+        ...(dto.rooms?.length
+          ? {
+              rooms: {
+                create: dto.rooms.map((room) => ({
+                  name: room.name,
+                  max_occupancy: room.max_occupancy,
+                  total_rooms: room.total_rooms,
+                  base_price: room.base_price,
+                  refundable: room.refundable,
+                  breakfast: room.breakfast,
+                  ...(room.prices?.length
+                    ? {
+                        price_calendar: {
+                          create: room.prices.map((p) => ({
+                            date: new Date(p.date),
+                            price: p.price,
+                            promo_type: p.promo_type,
+                            promo_value: p.promo_value,
+                          })),
+                        },
+                      }
+                    : {}),
+                  ...(room.inventory_daily?.length
+                    ? {
+                        inventory_daily: {
+                          create: room.inventory_daily.map((inv) => ({
+                            date: new Date(inv.date),
+                            total_rooms: inv.total_rooms ?? room.total_rooms,
+                            blocked_rooms: inv.blocked_rooms ?? 0,
+                            reserved_rooms: 0,
+                          })),
+                        },
+                      }
+                    : {}),
+                })),
+              },
+            }
+          : {}),
+        ...(dto.nearby_points?.length
+          ? {
+              nearby_points: {
+                create: dto.nearby_points.map((x) => ({
+                  type: x.type,
+                  name: x.name,
+                  distance_km: x.distance_km,
+                })),
+              },
+            }
+          : {}),
+      },
+      include: {
+        hotel_images: { orderBy: { sort: 'asc' } },
+        hotel_tags: true,
+        rooms: {
+          include: {
+            price_calendar: { orderBy: { date: 'asc' } },
+            inventory_daily: { orderBy: { date: 'asc' } },
+          },
+        },
+        nearby_points: true,
       },
     });
   }
@@ -59,6 +169,7 @@ export class MerchantService {
     const hotel = await this.prisma.hotels.findUnique({ where: { id: hotelId } });
     if (!hotel) throw new NotFoundException('Hotel not found');
     if (hotel.merchant_id !== userId) throw new ForbiddenException('Not your hotel');
+    this.assertMerchantStatus(dto.status);
 
     return this.prisma.hotels.update({
       where: { id: hotelId },
@@ -153,5 +264,12 @@ export class MerchantService {
         promo_value: dto.promo_value,
       },
     });
+  }
+
+  private assertMerchantStatus(status?: hotel_status) {
+    if (!status) return;
+    if (!this.merchantAllowedStatuses.has(status)) {
+      throw new BadRequestException('Merchant can only set status to DRAFT, PENDING, or OFFLINE');
+    }
   }
 }
