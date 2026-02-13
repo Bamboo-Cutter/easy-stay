@@ -230,30 +230,47 @@ erDiagram
   }
 ```
 
-## 8. 主要 API
-- Health: `GET /health`
-- Auth: `POST /auth/register` / `POST /auth/login` / `GET /auth/me` / `POST /auth/logout`
-- Merchant:
+## 8. 主要 API（当前代码实现）
+- Health
+  - `GET /health`
+- Auth
+  - `POST /auth/register`
+  - `POST /auth/login`
+  - `GET /auth/me`
+  - `POST /auth/logout`
+- Merchant（JWT + `MERCHANT` / `ADMIN`）
   - `GET /merchant/me`
   - `GET /merchant/hotels`
-  - `POST /merchant/hotels`
+  - `GET /merchant/hotels/:id`
+  - `POST /merchant/hotels`（一体化创建：可带 images/tags/rooms/nearby_points）
   - `PATCH /merchant/hotels/:id`
   - `POST /merchant/hotels/:id/images`
   - `POST /merchant/hotels/:id/tags`
   - `POST /merchant/hotels/:id/rooms`
   - `POST /merchant/rooms/:roomId/prices`
-- Admin:
+- Admin（JWT + `ADMIN`）
+  - `GET /admin/hotels`
   - `GET /admin/hotels/pending`
+  - `GET /admin/hotels/:id`
+  - `GET /admin/merchants/:merchantId/hotels`
   - `POST /admin/hotels/:id/approve`
   - `POST /admin/hotels/:id/reject`
+  - `PATCH /admin/hotels/:id/status`
   - `GET /admin/rooms/:roomId/inventory`
   - `POST /admin/rooms/:roomId/inventory`
-- Hotels (Public):
-  - `GET /hotels`
+- Hotels (Public)
+  - `GET /hotels`（列表，支持分页/排序/筛选）
+  - `GET /hotels/suggestions`
+  - `GET /hotels/featured`
+  - `GET /hotels/banners`
+  - `GET /hotels/filter-metadata`
   - `GET /hotels/:id`
+  - `GET /hotels/:id/offers`
+  - `GET /hotels/:id/calendar`
+  - `GET /hotels/:id/reviews-summary`
   - `GET /hotels/rooms/:roomId/prices`
   - `GET /hotels/rooms/:roomId/availability`
-- Bookings:
+- Bookings（当前实现为公开）
   - `POST /bookings`
   - `GET /bookings/:id`
   - `PATCH /bookings/:id/cancel`
@@ -675,6 +692,14 @@ Success `200`
 3. Admin approve hotel -> set room inventory
 4. Public query hotels/detail/availability
 5. Create booking -> get booking detail -> cancel booking
+
+### 10.7 权限与状态规则（当前实现）
+1. `/admin/**` 全部要求 `ADMIN` JWT。
+2. `/merchant/**` 要求 `MERCHANT` 或 `ADMIN` JWT，但商户只能操作“自己的酒店/房型”。
+3. 管理端酒店查询不返回 `DRAFT`（`GET /admin/hotels`、`GET /admin/hotels/:id`、`GET /admin/merchants/:merchantId/hotels`）。
+4. 管理员可设置酒店状态：`PENDING` / `APPROVED` / `REJECTED` / `OFFLINE`，不允许设为 `DRAFT`。
+5. 商户可设置酒店状态：`DRAFT` / `PENDING` / `OFFLINE`（不允许直接设 `APPROVED` / `REJECTED`）。
+6. 公开酒店接口只返回 `APPROVED` 酒店。
 
 
 ## 11. Postman 使用说明

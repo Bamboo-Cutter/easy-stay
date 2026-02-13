@@ -8,6 +8,7 @@ import { Roles } from '../common/roles.decorator';
 import { RolesGuard } from '../common/roles.guard';
 import { MerchantService } from './merchant.service';
 import { UpsertHotelDto } from './dto/upsert-hotel.dto';
+import { CreateHotelFullDto } from './dto/create-hotel-full.dto';
 import { SetImagesDto } from './dto/set-images.dto';
 import { SetTagsDto } from './dto/set-tags.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -31,9 +32,15 @@ export class MerchantController {
     return this.merchant.myHotels(req.user.id);
   }
 
+  // 获取当前商家名下某个酒店的详情
+  @Get('hotels/:id')
+  myHotelDetail(@Req() req: any, @Param('id') id: string) {
+    return this.merchant.myHotelDetail(req.user.id, id);
+  }
+
   // 创建酒店草稿
   @Post('hotels')
-  createHotel(@Req() req: any, @Body() dto: UpsertHotelDto) {
+  createHotel(@Req() req: any, @Body() dto: CreateHotelFullDto) {
     return this.merchant.createHotel(req.user.id, dto);
   }
 
