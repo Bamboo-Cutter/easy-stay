@@ -1,0 +1,150 @@
+
+
+/* 图片编辑输入框 */
+.image-wrapper input {
+  width: calc(95% - 40px);
+  padding: 6px 8px;
+  margin: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.image-wrapper button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 4px 8px;
+  background-color: #ff4d4f;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-wrapper button:hover {
+  background-color: #d9363e;
+}
+
+/* 房间和数组卡片 */
+.rooms h2 {
+  margin-bottom: 12px;
+  font-size: 20px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 4px;
+}
+
+
+/* 房间卡片输入框 */
+.room-card input, .room-card select {
+  width: calc(50% - 12px);
+  margin: 6px 6px 6px 0;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+/* 删除按钮 */
+.room-card button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.room-card button:hover {
+  background-color: #d9363e;
+}
+
+/* 添加按钮 */
+.rooms > button {
+  padding: 6px 12px;
+  margin-top: 8px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.rooms > button:hover {
+  background-color: #096dd9;
+}
+
+/* 酒店标签输入框和删除按钮 */
+.info-item span input {
+  width: 120px;
+  margin-right: 4px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.info-item span button {
+  padding: 2px 6px;
+  font-size: 12px;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.info-item span button:hover {
+  background-color: #d9363e;
+}
+
+/* 浮动右下角按钮 */
+.fixed-edit-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.fixed-edit-button button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.fixed-edit-button button:first-child {
+  background-color: #52c41a; /* 保存 */
+  color: white;
+}
+
+.fixed-edit-button button:first-child:hover {
+  background-color: #389e0d;
+}
+
+.fixed-edit-button button:last-child {
+  background-color: #ff4d4f; /* 取消 */
+  color: white;
+}
+
+.fixed-edit-button button:last-child:hover {
+  background-color: #d9363e;
+}
+
+.fixed-edit-button button.edit-mode {
+  background-color: #1890ff; /* 编辑 */
+  color: white;
+}
+
+.fixed-edit-button button.edit-mode:hover {
+  background-color: #096dd9;
+}

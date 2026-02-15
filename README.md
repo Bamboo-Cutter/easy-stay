@@ -22,45 +22,65 @@
 - Docker Desktop
 
 ## 4. 本地启动步骤
-### 4.1 启动数据库
-在仓库根目录执行：
 
+
+### 1) 准备环境
+先确保本机有：
+- Node.js（建议 20+）
+- pnpm
+- Docker Desktop（并已启动）
+
+### 2) 拉代码
+```bash
+git clone <你的仓库地址>
+cd easy-stay-hotel
+```
+
+### 3) 启动数据库（PostgreSQL）
+在项目根目录执行：
 ```bash
 docker compose up -d
 ```
 
-### 4.2 安装依赖
+检查是否起来：
+```bash
+docker ps
+```
+应该能看到 `easy_stay_db`（或 compose 里定义的 db 服务）。
 
+### 4) 安装后端依赖
 ```bash
 pnpm -C apps/api install
 ```
 
-### 4.3 配置环境变量
-后端使用：
-- `apps/api/.env`（开发环境）
-- `apps/api/.env.test`（e2e 环境）
-
-核心变量：
-
+### 5) 配置环境变量
+在 `apps/api` 下准备 `.env` 和 `.env.test`（可参考 `.env.example`）  
+核心至少要有：
 ```env
 DATABASE_URL="postgresql://hotel:hotel123@localhost:5432/hotel_booking?schema=public"
 JWT_SECRET="dev_secret_change_me"
 JWT_EXPIRES_IN="7d"
 ```
 
-### 4.4 同步数据库结构
-
+### 6) 同步数据库表结构
 ```bash
 pnpm -C apps/api exec dotenv -e .env.test -- prisma db push
 ```
 
-### 4.5 启动服务
+### 7) （可选）灌入演示数据
+你现在 seed 会生成大量测试数据（约 120 酒店）：
+```bash
+pnpm -C apps/api exec dotenv -e .env.test -- prisma db seed
+```
 
+### 8) 启动后端
 ```bash
 pnpm -C apps/api start:dev
 ```
+默认接口地址：
+- `http://localhost:3000`
+- 健康检查：`GET /health`
 
-默认地址：`http://localhost:3000`
 
 ## 5. 常用命令
 ```bash
