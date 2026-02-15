@@ -16,7 +16,7 @@ import {
 } from 'class-validator';
 import { hotel_status } from '@prisma/client';
 
-class HotelImageItemDto {
+export class HotelImageItemDto {
   @IsString()
   url!: string;
 
@@ -26,7 +26,7 @@ class HotelImageItemDto {
   sort?: number;
 }
 
-class NearbyPointItemDto {
+export class NearbyPointItemDto {
   @IsString()
   type!: string;
 
@@ -39,7 +39,7 @@ class NearbyPointItemDto {
   distance_km?: number;
 }
 
-class RoomItemDto {
+export class RoomItemDto {
   @IsString()
   name!: string;
 
@@ -74,7 +74,7 @@ class RoomItemDto {
   inventory_daily?: RoomInventoryItemDto[];
 }
 
-class RoomPriceItemDto {
+export class RoomPriceItemDto {
   @IsISO8601()
   date!: string;
 
@@ -92,7 +92,7 @@ class RoomPriceItemDto {
   promo_value?: number;
 }
 
-class RoomInventoryItemDto {
+export class RoomInventoryItemDto {
   @IsISO8601()
   date!: string;
 

@@ -14,6 +14,7 @@ import { UpsertPriceDto } from './dto/upsert-price.dto';
 @Injectable()
 export class MerchantService {
   constructor(private prisma: PrismaService) {}
+  private readonly defaultCalendarDays = 90;
   private readonly merchantAllowedStatuses = new Set<hotel_status>([
     hotel_status.DRAFT,
     hotel_status.PENDING,
@@ -72,6 +73,7 @@ export class MerchantService {
   async createHotel(userId: string, dto: CreateHotelFullDto) {
     this.assertMerchantStatus(dto.status);
     const tags = [...new Set(dto.tags ?? [])];
+    const dates = this.getFutureDates(this.defaultCalendarDays);
     return this.prisma.hotels.create({
       data: {
         merchant_id: userId,
@@ -110,30 +112,20 @@ export class MerchantService {
                   base_price: room.base_price,
                   refundable: room.refundable,
                   breakfast: room.breakfast,
-                  ...(room.prices?.length
-                    ? {
-                        price_calendar: {
-                          create: room.prices.map((p) => ({
-                            date: new Date(p.date),
-                            price: p.price,
-                            promo_type: p.promo_type,
-                            promo_value: p.promo_value,
-                          })),
-                        },
-                      }
-                    : {}),
-                  ...(room.inventory_daily?.length
-                    ? {
-                        inventory_daily: {
-                          create: room.inventory_daily.map((inv) => ({
-                            date: new Date(inv.date),
-                            total_rooms: inv.total_rooms ?? room.total_rooms,
-                            blocked_rooms: inv.blocked_rooms ?? 0,
-                            reserved_rooms: 0,
-                          })),
-                        },
-                      }
-                    : {}),
+                  price_calendar: {
+                    create: dates.map((date) => ({
+                      date,
+                      price: room.base_price,
+                    })),
+                  },
+                  inventory_daily: {
+                    create: dates.map((date) => ({
+                      date,
+                      total_rooms: room.total_rooms,
+                      blocked_rooms: 0,
+                      reserved_rooms: 0,
+                    })),
+                  },
                 })),
               },
             }
@@ -170,19 +162,122 @@ export class MerchantService {
     if (!hotel) throw new NotFoundException('Hotel not found');
     if (hotel.merchant_id !== userId) throw new ForbiddenException('Not your hotel');
     this.assertMerchantStatus(dto.status);
+    const dates = this.getFutureDates(this.defaultCalendarDays);
 
-    return this.prisma.hotels.update({
-      where: { id: hotelId },
-      data: {
-        name_cn: dto.name_cn,
-        name_en: dto.name_en,
-        address: dto.address,
-        city: dto.city,
-        star: dto.star,
-        type: dto.type,
-        open_year: dto.open_year,
-        ...(dto.status ? { status: dto.status } : {}),
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const hotelUpdateData: any = {};
+      if (dto.name_cn !== undefined) hotelUpdateData.name_cn = dto.name_cn;
+      if (dto.name_en !== undefined) hotelUpdateData.name_en = dto.name_en;
+      if (dto.address !== undefined) hotelUpdateData.address = dto.address;
+      if (dto.city !== undefined) hotelUpdateData.city = dto.city;
+      if (dto.star !== undefined) hotelUpdateData.star = dto.star;
+      if (dto.type !== undefined) hotelUpdateData.type = dto.type;
+      if (dto.open_year !== undefined) hotelUpdateData.open_year = dto.open_year;
+      if (dto.status !== undefined) hotelUpdateData.status = dto.status;
+
+      if (Object.keys(hotelUpdateData).length > 0) {
+        await tx.hotels.update({
+          where: { id: hotelId },
+          data: hotelUpdateData,
+        });
+      }
+
+      if (dto.images !== undefined) {
+        await tx.hotel_images.deleteMany({ where: { hotel_id: hotelId } });
+        if (dto.images.length > 0) {
+          await tx.hotel_images.createMany({
+            data: dto.images.map((x, index) => ({
+              hotel_id: hotelId,
+              url: x.url,
+              sort: x.sort ?? index,
+            })),
+          });
+        }
+      }
+
+      if (dto.tags !== undefined) {
+        const tags = [...new Set(dto.tags)];
+        await tx.hotel_tags.deleteMany({ where: { hotel_id: hotelId } });
+        if (tags.length > 0) {
+          await tx.hotel_tags.createMany({
+            data: tags.map((tag) => ({ hotel_id: hotelId, tag })),
+            skipDuplicates: true,
+          });
+        }
+      }
+
+      if (dto.nearby_points !== undefined) {
+        await tx.nearby_points.deleteMany({ where: { hotel_id: hotelId } });
+        if (dto.nearby_points.length > 0) {
+          await tx.nearby_points.createMany({
+            data: dto.nearby_points.map((x) => ({
+              hotel_id: hotelId,
+              type: x.type,
+              name: x.name,
+              distance_km: x.distance_km,
+            })),
+          });
+        }
+      }
+
+      if (dto.rooms !== undefined) {
+        const oldRooms = await tx.rooms.findMany({
+          where: { hotel_id: hotelId },
+          select: { id: true },
+        });
+        const oldRoomIds = oldRooms.map((x) => x.id);
+
+        if (oldRoomIds.length > 0) {
+          await tx.price_calendar.deleteMany({ where: { room_id: { in: oldRoomIds } } });
+          await tx.room_inventory_daily.deleteMany({ where: { room_id: { in: oldRoomIds } } });
+          await tx.rooms.deleteMany({ where: { id: { in: oldRoomIds } } });
+        }
+
+        for (const room of dto.rooms) {
+          await tx.rooms.create({
+            data: {
+              hotel_id: hotelId,
+              name: room.name,
+              max_occupancy: room.max_occupancy,
+              total_rooms: room.total_rooms,
+              base_price: room.base_price,
+              refundable: room.refundable,
+              breakfast: room.breakfast,
+              price_calendar: {
+                create: dates.map((date) => ({
+                  date,
+                  price: room.base_price,
+                })),
+              },
+              inventory_daily: {
+                create: dates.map((date) => ({
+                  date,
+                  total_rooms: room.total_rooms,
+                  blocked_rooms: 0,
+                  reserved_rooms: 0,
+                })),
+              },
+            },
+          });
+        }
+      }
+
+      return tx.hotels.findUnique({
+        where: { id: hotelId },
+        include: {
+          hotel_images: { orderBy: { sort: 'asc' } },
+          hotel_tags: true,
+          nearby_points: true,
+          review_summary: true,
+          rooms: {
+            orderBy: { name: 'asc' },
+            include: {
+              price_calendar: { orderBy: { date: 'asc' } },
+              inventory_daily: { orderBy: { date: 'asc' } },
+            },
+          },
+        },
+      });
     });
   }
 
@@ -271,5 +366,22 @@ export class MerchantService {
     if (!this.merchantAllowedStatuses.has(status)) {
       throw new BadRequestException('Merchant can only set status to DRAFT, PENDING, or OFFLINE');
     }
+  }
+
+  private startOfDay(value: string | Date) {
+    const d = new Date(value);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private getFutureDates(days: number) {
+    const list: Date[] = [];
+    const today = this.startOfDay(new Date());
+    for (let i = 0; i < days; i += 1) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      list.push(d);
+    }
+    return list;
   }
 }

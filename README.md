@@ -85,6 +85,7 @@ pnpm -C apps/api test:e2e
 - 图片/标签维护
 - 房型创建
 - 房型价格日历维护
+- 创建/更新酒店时，后端会为房型自动生成默认 90 天 `price_calendar` 与 `inventory_daily`
 
 ### 6.3 管理员侧
 - 待审核酒店列表
@@ -222,16 +223,18 @@ erDiagram
   - `GET /merchant/me`
   - `GET /merchant/hotels`
   - `GET /merchant/hotels/:id`
-  - `POST /merchant/hotels`（一体化创建：可带 images/tags/rooms/nearby_points）
-  - `PATCH /merchant/hotels/:id`
+  - `POST /merchant/hotels`（一体化创建：可带 images/tags/rooms/nearby_points；自动生成默认价格/库存日历）
+  - `PATCH /merchant/hotels/:id`（可更新基础信息 + images/tags/rooms/nearby_points；不直接编辑价格/库存日历）
   - `POST /merchant/hotels/:id/images`
   - `POST /merchant/hotels/:id/tags`
   - `POST /merchant/hotels/:id/rooms`
   - `POST /merchant/rooms/:roomId/prices`
 - Admin（JWT + `ADMIN`）
   - `GET /admin/hotels`
+  - `POST /admin/hotels`（创建酒店，对齐 merchant 创建能力）
   - `GET /admin/hotels/pending`
   - `GET /admin/hotels/:id`
+  - `PATCH /admin/hotels/:id`（更新酒店，对齐 merchant 更新能力）
   - `GET /admin/merchants/:merchantId/hotels`
   - `POST /admin/hotels/:id/approve`
   - `POST /admin/hotels/:id/reject`
@@ -405,6 +408,9 @@ Success `201`
 - Method: `POST`
 - Path: `/merchant/hotels`
 - Auth: `Yes` (`MERCHANT` / `ADMIN`)
+- Notes:
+  - 支持一体化写入 `images/tags/rooms/nearby_points`
+  - 如果包含 `rooms`，后端会自动为每个房型初始化未来 90 天 `price_calendar`（价格= `base_price`）与 `inventory_daily`（总房= `total_rooms`）
 
 Request Body
 | Field | Type | Required |
@@ -422,6 +428,10 @@ Request Body
 - Method: `PATCH`
 - Path: `/merchant/hotels/{id}`
 - Auth: `Yes` (`MERCHANT` / `ADMIN`)
+- Notes:
+  - 可更新酒店基础字段 + `images/tags/rooms/nearby_points`
+  - `images/tags/rooms/nearby_points` 采用覆盖式更新
+  - 不通过该接口直接编辑 `price_calendar` / `inventory_daily`
 
 Path Params
 | Name | Type | Required |
@@ -487,12 +497,28 @@ Request Body
 
 #### Admin
 
-##### 14) Pending Hotels
+##### 14) Create Hotel (Admin)
+- Method: `POST`
+- Path: `/admin/hotels`
+- Auth: `Yes` (`ADMIN`)
+- Notes:
+  - 能力对齐 merchant 创建酒店
+  - 创建房型时自动生成默认 90 天价格/库存日历
+
+##### 15) Update Hotel (Admin)
+- Method: `PATCH`
+- Path: `/admin/hotels/{id}`
+- Auth: `Yes` (`ADMIN`)
+- Notes:
+  - 能力对齐 merchant 更新酒店
+  - 不通过该接口直接编辑 `price_calendar` / `inventory_daily`
+
+##### 16) Pending Hotels
 - Method: `GET`
 - Path: `/admin/hotels/pending`
 - Auth: `Yes` (`ADMIN`)
 
-##### 15) Approve Hotel
+##### 17) Approve Hotel
 - Method: `POST`
 - Path: `/admin/hotels/{id}/approve`
 - Auth: `Yes` (`ADMIN`)
@@ -502,7 +528,7 @@ Path Params
 |---|---|---|
 | id | string | Yes |
 
-##### 16) Reject Hotel
+##### 18) Reject Hotel
 - Method: `POST`
 - Path: `/admin/hotels/{id}/reject`
 - Auth: `Yes` (`ADMIN`)
@@ -512,7 +538,7 @@ Request Body
 |---|---|---|
 | reason | string | No |
 
-##### 17) Get Room Inventory Calendar
+##### 19) Get Room Inventory Calendar
 - Method: `GET`
 - Path: `/admin/rooms/{roomId}/inventory`
 - Auth: `Yes` (`ADMIN`)
@@ -528,7 +554,7 @@ Query Params
 | from | ISO8601 string | No |
 | to | ISO8601 string | No |
 
-##### 18) Set Room Inventory
+##### 20) Set Room Inventory
 - Method: `POST`
 - Path: `/admin/rooms/{roomId}/inventory`
 - Auth: `Yes` (`ADMIN`)
@@ -544,7 +570,7 @@ Request Body
 
 #### Public Hotels
 
-##### 19) List Hotels
+##### 21) List Hotels
 - Method: `GET`
 - Path: `/hotels`
 - Auth: `No`
@@ -567,7 +593,7 @@ Success `200`
 }
 ```
 
-##### 20) Hotel Detail
+##### 22) Hotel Detail
 - Method: `GET`
 - Path: `/hotels/{id}`
 - Auth: `No`
@@ -584,14 +610,14 @@ Query Params
 | check_out | ISO8601 string | No | 离店日 |
 | rooms_count | int | No | 默认 1 |
 
-##### 21) Room Price Calendar
+##### 23) Room Price Calendar
 - Method: `GET`
 - Path: `/hotels/rooms/{roomId}/prices`
 - Auth: `No`
 
 Query Params: `from`, `to`（可选）
 
-##### 22) Room Availability
+##### 24) Room Availability
 - Method: `GET`
 - Path: `/hotels/rooms/{roomId}/availability`
 - Auth: `No`
@@ -617,7 +643,7 @@ Success `200`
 
 #### Bookings
 
-##### 23) Create Booking
+##### 25) Create Booking
 - Method: `POST`
 - Path: `/bookings`
 - Auth: `No` (当前实现)
@@ -644,12 +670,12 @@ Success `201`
 }
 ```
 
-##### 24) Booking Detail
+##### 26) Booking Detail
 - Method: `GET`
 - Path: `/bookings/{id}`
 - Auth: `No` (当前实现)
 
-##### 25) Cancel Booking
+##### 27) Cancel Booking
 - Method: `PATCH`
 - Path: `/bookings/{id}/cancel`
 - Auth: `No` (当前实现)
@@ -668,8 +694,8 @@ Success `200`
 
 ### 10.6 Integration Flow
 1. Register merchant/admin -> login
-2. Merchant create hotel -> create room -> set price -> submit `PENDING`
-3. Admin approve hotel -> set room inventory
+2. Merchant/Admin create hotel (with rooms) -> system auto-initialize 90-day room price/inventory
+3. Merchant submit `PENDING` (or admin set status) -> admin approve/reject
 4. Public query hotels/detail/availability
 5. Create booking -> get booking detail -> cancel booking
 
