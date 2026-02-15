@@ -1,17 +1,8 @@
 import Taro from '@tarojs/taro';
-import type {
-  FilterMetadata,
-  HomeBanner,
-  HotelCalendarResponse,
-  HotelListQuery,
-  HotelListResponse,
-  HotelOffersResponse,
-  ReviewSummary,
-} from '../types/hotel';
 
-const BASE_URL = (typeof API_BASE !== 'undefined' ? API_BASE : 'http://localhost:3000') as string;
+const BASE_URL = typeof API_BASE !== 'undefined' ? API_BASE : 'http://localhost:3000';
 
-function buildUrl(path: string, query?: Record<string, unknown>) {
+function buildUrl(path, query) {
   const url = new URL(path, BASE_URL);
   if (query) {
     Object.entries(query).forEach(([k, v]) => {
@@ -23,8 +14,8 @@ function buildUrl(path: string, query?: Record<string, unknown>) {
   return url.toString();
 }
 
-async function get<T>(path: string, query?: Record<string, unknown>) {
-  const res = await Taro.request<T>({
+async function get(path, query) {
+  const res = await Taro.request({
     method: 'GET',
     url: buildUrl(path, query),
   });
@@ -34,8 +25,8 @@ async function get<T>(path: string, query?: Record<string, unknown>) {
   return res.data;
 }
 
-async function post<T>(path: string, data: Record<string, unknown>) {
-  const res = await Taro.request<T>({
+async function post(path, data) {
+  const res = await Taro.request({
     method: 'POST',
     url: buildUrl(path),
     data,
@@ -50,23 +41,14 @@ async function post<T>(path: string, data: Record<string, unknown>) {
 }
 
 export const api = {
-  getFeatured: () => get<Array<{ id: string; name_cn: string; city: string; cover: string | null; rating: number | null; min_price: number | null }>>('/hotels/featured'),
-  getBanners: () => get<HomeBanner[]>('/hotels/banners'),
-  getSuggestions: (keyword: string) => get<{ items: Array<{ id: string; city: string; label: string }> }>('/hotels/suggestions', { keyword }),
-  getHotels: (query: HotelListQuery) => get<HotelListResponse>('/hotels', query),
-  getFilterMetadata: (city?: string) => get<FilterMetadata>('/hotels/filter-metadata', { city }),
-  getHotelDetail: (id: string, query: { check_in?: string; check_out?: string; rooms_count?: number }) => get(`/hotels/${id}`, query),
-  getHotelOffers: (id: string, query: { check_in: string; check_out: string; rooms_count: number }) => get<HotelOffersResponse>(`/hotels/${id}/offers`, query),
-  getHotelCalendar: (id: string, month: string) => get<HotelCalendarResponse>(`/hotels/${id}/calendar`, { month }),
-  getReviewSummary: (id: string) => get<ReviewSummary>(`/hotels/${id}/reviews-summary`),
-  createBooking: (payload: {
-    hotel_id: string;
-    room_id: string;
-    check_in: string;
-    check_out: string;
-    rooms_count: number;
-    guest_count: number;
-    contact_name: string;
-    contact_phone: string;
-  }) => post<{ id: string }>('/bookings', payload),
+  getFeatured: () => get('/hotels/featured'),
+  getBanners: () => get('/hotels/banners'),
+  getSuggestions: (keyword) => get('/hotels/suggestions', { keyword }),
+  getHotels: (query) => get('/hotels', query),
+  getFilterMetadata: (city) => get('/hotels/filter-metadata', { city }),
+  getHotelDetail: (id, query) => get(`/hotels/${id}`, query),
+  getHotelOffers: (id, query) => get(`/hotels/${id}/offers`, query),
+  getHotelCalendar: (id, month) => get(`/hotels/${id}/calendar`, { month }),
+  getReviewSummary: (id) => get(`/hotels/${id}/reviews-summary`),
+  createBooking: (payload) => post('/bookings', payload),
 };

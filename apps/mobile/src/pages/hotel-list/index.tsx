@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Taro, { usePullDownRefresh, useReachBottom, useRouter } from '@tarojs/taro';
 import { Button, Image, Input, ScrollView, Text, View } from '@tarojs/components';
-import type { FilterMetadata, HotelItem, HotelListQuery } from '../../types/hotel';
 import { api } from '../../services/api';
 import './index.scss';
-
-type SheetType = 'sort' | 'filter' | 'location' | 'price' | null;
 
 const sortOptions = [
   { value: 'recommended', label: 'Trip.com 推荐' },
@@ -15,7 +12,7 @@ const sortOptions = [
   { value: 'star_desc', label: '星级（由高至低）' },
 ];
 
-function shortDate(v?: string) {
+function shortDate(v) {
   if (!v) return '--';
   const d = new Date(v);
   if (Number.isNaN(d.getTime())) return v.slice(5, 10);
@@ -24,13 +21,13 @@ function shortDate(v?: string) {
 
 export default function HotelListPage() {
   const router = useRouter();
-  const [sheet, setSheet] = useState<SheetType>(null);
-  const [items, setItems] = useState<HotelItem[]>([]);
+  const [sheet, setSheet] = useState(null);
+  const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [meta, setMeta] = useState<FilterMetadata | null>(null);
-  const [query, setQuery] = useState<HotelListQuery>({
+  const [meta, setMeta] = useState(null);
+  const [query, setQuery] = useState({
     city: router.params.city || '',
     keyword: router.params.keyword || '',
     check_in: router.params.check_in,
@@ -135,18 +132,10 @@ export default function HotelListPage() {
           </Text>
         </View>
         <View className='filter-row'>
-          <View className='filter-btn' onClick={() => setSheet('sort')}>
-            排序
-          </View>
-          <View className='filter-btn' onClick={() => setSheet('filter')}>
-            筛选
-          </View>
-          <View className='filter-btn' onClick={() => setSheet('location')}>
-            位置
-          </View>
-          <View className='filter-btn' onClick={() => setSheet('price')}>
-            价格
-          </View>
+          <View className='filter-btn' onClick={() => setSheet('sort')}>排序</View>
+          <View className='filter-btn' onClick={() => setSheet('filter')}>筛选</View>
+          <View className='filter-btn' onClick={() => setSheet('location')}>位置</View>
+          <View className='filter-btn' onClick={() => setSheet('price')}>价格</View>
         </View>
       </View>
 
@@ -223,7 +212,7 @@ export default function HotelListPage() {
               key={s.value}
               className={`option ${query.sort === s.value ? 'active' : ''}`}
               onClick={() => {
-                setQuery((prev) => ({ ...prev, sort: s.value as HotelListQuery['sort'], page: 1 }));
+                setQuery((prev) => ({ ...prev, sort: s.value, page: 1 }));
                 setSheet(null);
               }}
             >
@@ -257,9 +246,7 @@ export default function HotelListPage() {
             <View className='option' style='border:none;padding:6px 0' onClick={() => setRefundable((v) => !v)}>
               <Text>{refundable ? '☑' : '☐'} 免费取消 / 可退款</Text>
             </View>
-            <Button className='primary-btn' onClick={applyFilter}>
-              显示结果
-            </Button>
+            <Button className='primary-btn' onClick={applyFilter}>显示结果</Button>
           </View>
         </View>
       )}
@@ -277,9 +264,7 @@ export default function HotelListPage() {
               value={query.city || ''}
               onInput={(e) => setQuery((prev) => ({ ...prev, city: e.detail.value, page: 1 }))}
             />
-            <Button className='primary-btn' onClick={() => setSheet(null)}>
-              显示结果
-            </Button>
+            <Button className='primary-btn' onClick={() => setSheet(null)}>显示结果</Button>
           </View>
         </View>
       )}
@@ -298,9 +283,7 @@ export default function HotelListPage() {
                 当前城市价格区间：AUD {Math.round(meta.price_range.min / 100)} - {Math.round(meta.price_range.max / 100)}
               </View>
             )}
-            <Button className='primary-btn' onClick={applyFilter}>
-              显示结果
-            </Button>
+            <Button className='primary-btn' onClick={applyFilter}>显示结果</Button>
           </View>
         </View>
       )}

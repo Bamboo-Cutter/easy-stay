@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { Button, Image, ScrollView, Text, View } from '@tarojs/components';
-import type { HotelOffer, HotelOffersResponse } from '../../types/hotel';
 import { api } from '../../services/api';
 import { dayLabel } from '../../utils/date';
 import './index.scss';
@@ -13,9 +12,9 @@ export default function RoomOffersPage() {
   const checkOut = router.params.check_out || '';
   const roomsCount = Number(router.params.rooms_count || 1);
 
-  const [offers, setOffers] = useState<HotelOffersResponse | null>(null);
+  const [offers, setOffers] = useState(null);
   const [hotelName, setHotelName] = useState('');
-  const [activeOffer, setActiveOffer] = useState<HotelOffer | null>(null);
+  const [activeOffer, setActiveOffer] = useState(null);
 
   useEffect(() => {
     if (!hotelId) return;
@@ -39,9 +38,7 @@ export default function RoomOffersPage() {
       </View>
 
       <View className='card' style='margin:12px;padding:12px;'>
-        <View>
-          {dayLabel(checkIn)} - {dayLabel(checkOut)} · {roomsCount}间 · 1晚
-        </View>
+        <View>{dayLabel(checkIn)} - {dayLabel(checkOut)} · {roomsCount}间 · 1晚</View>
       </View>
 
       <ScrollView scrollY style='height: calc(100vh - 170px)'>
@@ -50,9 +47,7 @@ export default function RoomOffersPage() {
             <Image src='https://picsum.photos/seed/offer/900/500' mode='aspectFill' />
             <View className='offer-body'>
               <View className='offer-name'>{item.room_name}</View>
-              <View className='offer-meta'>
-                最多 {item.max_occupancy} 人 · {item.breakfast ? '含早餐' : '不含早餐'} · {item.refundable ? '可退款' : '不可退款'}
-              </View>
+              <View className='offer-meta'>最多 {item.max_occupancy} 人 · {item.breakfast ? '含早餐' : '不含早餐'} · {item.refundable ? '可退款' : '不可退款'}</View>
               <View className='offer-meta'>剩余 {item.available_rooms} 间</View>
               <View className='offer-links'>
                 <Text onClick={() => setActiveOffer(item)}>价格详情</Text>
@@ -101,9 +96,7 @@ export default function RoomOffersPage() {
               <Text>总价</Text>
               <Text>AUD {(activeOffer.total_price / 100).toFixed(2)}</Text>
             </View>
-            <View className='sheet-tip'>
-              {activeOffer.refundable ? '支持免费取消' : '此价格不可退款'} · {activeOffer.breakfast ? '包含早餐' : '不含早餐'}
-            </View>
+            <View className='sheet-tip'>{activeOffer.refundable ? '支持免费取消' : '此价格不可退款'} · {activeOffer.breakfast ? '包含早餐' : '不含早餐'}</View>
           </View>
         </View>
       )}

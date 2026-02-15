@@ -1,6 +1,6 @@
-import type { UserConfigExport } from '@tarojs/cli';
+import { defineConfig } from '@tarojs/cli';
 
-export default {
+export default defineConfig({
   projectName: 'easy-stay-mobile',
   date: '2026-02-10',
   designWidth: 375,
@@ -48,4 +48,4 @@ export default {
       },
     },
   },
-} satisfies UserConfigExport;
+});

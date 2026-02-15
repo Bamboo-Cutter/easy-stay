@@ -1,7 +1,7 @@
 /**
  * 文件说明：该文件定义了接口路由与请求转发逻辑。
  */
-import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../common/roles.decorator';
 import { RolesGuard } from '../common/roles.guard';
@@ -10,6 +10,8 @@ import { SetRoomInventoryDto } from './dto/set-room-inventory.dto';
 import { InventoryRangeDto } from './dto/inventory-range.dto';
 import { SetHotelStatusDto } from './dto/set-hotel-status.dto';
 import { user_role } from '@prisma/client';
+import { CreateHotelFullDto } from '../merchant/dto/create-hotel-full.dto';
+import { UpsertHotelDto } from '../merchant/dto/upsert-hotel.dto';
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles(user_role.ADMIN)
@@ -21,6 +23,18 @@ export class AdminController {
   @Get('hotels')
   allHotels() {
     return this.admin.allHotels();
+  }
+
+  // 管理员创建酒店（对齐 merchant 创建能力）
+  @Post('hotels')
+  createHotel(@Req() req: any, @Body() dto: CreateHotelFullDto) {
+    return this.admin.createHotel(req.user.id, dto);
+  }
+
+  // 管理员更新酒店（对齐 merchant 更新能力）
+  @Patch('hotels/:id')
+  updateHotel(@Param('id') id: string, @Body() dto: UpsertHotelDto) {
+    return this.admin.updateHotel(id, dto);
   }
 
   // 查询待审核酒店列表
