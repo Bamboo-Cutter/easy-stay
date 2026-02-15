@@ -28,9 +28,17 @@ export default function BookingPage() {
     if (!hotelId) return;
     api
       .getHotelDetail(hotelId, { check_in: checkIn, check_out: checkOut, rooms_count: roomsCount })
-      .then((d: any) => {
+      .then((d) => {
         setHotelName(d?.name_cn || '酒店');
-        const matched = (d?.room_price_list || []).find((r: any) => r.room_id === roomId);
+        const roomList = Array.isArray(d?.room_price_list) ? d.room_price_list : [];
+        let matched = null;
+        for (let i = 0; i < roomList.length; i += 1) {
+          const item = roomList[i];
+          if (item && item.room_id === roomId) {
+            matched = item;
+            break;
+          }
+        }
         if (matched?.room_name) setRoomName(matched.room_name);
       })
       .catch(() => {});
@@ -58,7 +66,7 @@ export default function BookingPage() {
         title: '预订成功',
         content: `订单号：${result.id}`,
         showCancel: false,
-        success: () => (Taro.switchTab ? Taro.reLaunch({ url: '/pages/home/index' }) : Taro.navigateBack({ delta: 10 })),
+        success: () => Taro.reLaunch({ url: '/pages/home/index' }),
       });
     } catch {
       Taro.showToast({ title: '预订失败，请稍后重试', icon: 'none' });
@@ -106,18 +114,8 @@ export default function BookingPage() {
           <View className='block-h'>住客资料</View>
           <View className='block-b'>
             <View className='row'>
-              <Input
-                className='inp'
-                value={contactName.split(' ')[0] || ''}
-                onInput={(e) => setContactName(`${e.detail.value} ${contactName.split(' ')[1] || ''}`.trim())}
-                placeholder='姓'
-              />
-              <Input
-                className='inp'
-                value={contactName.split(' ')[1] || ''}
-                onInput={(e) => setContactName(`${contactName.split(' ')[0] || ''} ${e.detail.value}`.trim())}
-                placeholder='名'
-              />
+              <Input className='inp' value={contactName.split(' ')[0] || ''} onInput={(e) => setContactName(`${e.detail.value} ${contactName.split(' ')[1] || ''}`.trim())} placeholder='姓' />
+              <Input className='inp' value={contactName.split(' ')[1] || ''} onInput={(e) => setContactName(`${contactName.split(' ')[0] || ''} ${e.detail.value}`.trim())} placeholder='名' />
             </View>
             <Input className='inp' value={email} onInput={(e) => setEmail(e.detail.value)} placeholder='电子邮件' />
             <Input className='inp' value={phone} onInput={(e) => setPhone(e.detail.value)} placeholder='手机' />
@@ -127,18 +125,10 @@ export default function BookingPage() {
         <View className='block'>
           <View className='block-h'>特别要求（选填）</View>
           <View className='block-b'>
-            <View>
-              <Checkbox checked={quietRoom} onClick={() => setQuietRoom((v) => !v)} /> 安静房间
-            </View>
-            <View style='margin-top:10px'>
-              <Checkbox checked={nonSmoking} onClick={() => setNonSmoking((v) => !v)} /> 需要无烟处理
-            </View>
-            <View style='margin-top:10px'>
-              <Checkbox checked={highFloor} onClick={() => setHighFloor((v) => !v)} /> 非角落房间
-            </View>
-            <View className='muted' style='margin-top:12px'>
-              酒店将尽力满足需求，但不保证成功。
-            </View>
+            <View><Checkbox value='quiet-room' checked={quietRoom} onClick={() => setQuietRoom((v) => !v)} /> 安静房间</View>
+            <View style='margin-top:10px'><Checkbox value='non-smoking' checked={nonSmoking} onClick={() => setNonSmoking((v) => !v)} /> 需要无烟处理</View>
+            <View style='margin-top:10px'><Checkbox value='high-floor' checked={highFloor} onClick={() => setHighFloor((v) => !v)} /> 非角落房间</View>
+            <View className='muted' style='margin-top:12px'>酒店将尽力满足需求，但不保证成功。</View>
           </View>
         </View>
 
@@ -165,9 +155,7 @@ export default function BookingPage() {
           <View className='block-h'>Trip Coins</View>
           <View className='block-b'>
             <View style='font-size:28px;color:#9a6700;font-weight:700'>赚取 195 Trip Coins（约 AUD2.76）</View>
-            <View className='muted' style='margin-top:8px'>
-              消费后积分将返还至账户，可用于下次订单抵扣。
-            </View>
+            <View className='muted' style='margin-top:8px'>消费后积分将返还至账户，可用于下次订单抵扣。</View>
           </View>
         </View>
       </ScrollView>
@@ -178,9 +166,7 @@ export default function BookingPage() {
             <View className='muted'>网上预付</View>
             <View className='price'>AUD {(totalPrice / 100).toFixed(2)}</View>
           </View>
-          <Button className='primary-btn' style='width:220px' loading={submitting} onClick={onSubmit}>
-            预订
-          </Button>
+          <Button className='primary-btn' style='width:220px' loading={submitting} onClick={onSubmit}>预订</Button>
         </View>
       </View>
     </View>

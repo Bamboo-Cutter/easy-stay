@@ -9,19 +9,19 @@ const HISTORY_KEY = 'easy_stay_mobile_search_history';
 
 function loadHistory() {
   try {
-    return JSON.parse(Taro.getStorageSync(HISTORY_KEY) || '[]') as string[];
+    return JSON.parse(Taro.getStorageSync(HISTORY_KEY) || '[]');
   } catch {
     return [];
   }
 }
 
-function saveHistory(keyword: string) {
+function saveHistory(keyword) {
   const h = loadHistory().filter((x) => x !== keyword);
   h.unshift(keyword);
   Taro.setStorageSync(HISTORY_KEY, JSON.stringify(h.slice(0, 8)));
 }
 
-function addDays(isoDate: string, offset: number) {
+function addDays(isoDate, offset) {
   const d = new Date(isoDate);
   d.setDate(d.getDate() + offset);
   return toIsoDay(d).slice(0, 10);
@@ -29,8 +29,8 @@ function addDays(isoDate: string, offset: number) {
 
 export default function SearchPage() {
   const [keyword, setKeyword] = useState('');
-  const [history, setHistory] = useState<string[]>([]);
-  const [suggestions, setSuggestions] = useState<Array<{ id: string; city: string; label: string }>>([]);
+  const [history, setHistory] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [checkIn, setCheckIn] = useState(toIsoDay(afterDays(1)).slice(0, 10));
   const [checkOut, setCheckOut] = useState(toIsoDay(afterDays(2)).slice(0, 10));
   const [roomsCount, setRoomsCount] = useState('1');
@@ -55,7 +55,7 @@ export default function SearchPage() {
 
   const quickDate = useMemo(() => ({ checkIn: toIsoDay(checkIn), checkOut: toIsoDay(checkOut) }), [checkIn, checkOut]);
 
-  const goList = (text: string, cityHint?: string) => {
+  const goList = (text, cityHint) => {
     const kw = text.trim();
     if (!kw) {
       Taro.showToast({ title: '请输入目的地', icon: 'none' });
@@ -80,22 +80,16 @@ export default function SearchPage() {
   return (
     <View className='search-page'>
       <View className='search-top'>
-        <View className='back' onClick={() => Taro.navigateBack()}>
-          ←
-        </View>
+        <View className='back' onClick={() => Taro.navigateBack()}>←</View>
         <View className='search-input'>
           <Text>🤖</Text>
           <Input value={keyword} placeholder='目的地、景点、酒店等' onInput={(e) => setKeyword(e.detail.value)} />
         </View>
-        <View className='search-btn' onClick={() => goList(keyword)}>
-          搜寻
-        </View>
+        <View className='search-btn' onClick={() => goList(keyword)}>搜寻</View>
       </View>
 
       <View className='panel'>
-        <View className='panel-h'>
-          <Text>搜索设置</Text>
-        </View>
+        <View className='panel-h'><Text>搜索设置</Text></View>
         <View className='config-grid'>
           <View>
             <View className='muted config-label'>入住</View>
@@ -122,33 +116,17 @@ export default function SearchPage() {
       <View className='panel'>
         <View className='panel-h'>
           <Text>最近搜索记录</Text>
-          <Text
-            style='color:#2f55e7'
-            onClick={() => {
-              Taro.removeStorageSync(HISTORY_KEY);
-              setHistory([]);
-            }}
-          >
-            清除
-          </Text>
+          <Text style='color:#2f55e7' onClick={() => { Taro.removeStorageSync(HISTORY_KEY); setHistory([]); }}>清除</Text>
         </View>
         <View className='chips'>
-          {history.length ? (
-            history.map((h) => (
-              <View key={h} className='chip' onClick={() => goList(h)}>
-                {h}
-              </View>
-            ))
-          ) : (
-            <Text className='muted'>暂无历史记录</Text>
-          )}
+          {history.length ? history.map((h) => (
+            <View key={h} className='chip' onClick={() => goList(h)}>{h}</View>
+          )) : <Text className='muted'>暂无历史记录</Text>}
         </View>
       </View>
 
       <View className='panel'>
-        <View className='panel-h'>
-          <Text>智能搜索建议</Text>
-        </View>
+        <View className='panel-h'><Text>智能搜索建议</Text></View>
         {(suggestions || []).map((s) => (
           <View key={s.id} className='suggestion-item' onClick={() => goList(s.label, s.city)}>
             <View style='font-size:28px;font-weight:600'>{s.label}</View>
@@ -159,9 +137,7 @@ export default function SearchPage() {
       </View>
 
       <View className='panel'>
-        <View className='panel-h'>
-          <Text>TripGenie 提示</Text>
-        </View>
+        <View className='panel-h'><Text>TripGenie 提示</Text></View>
         <View className='suggestion-item'>你好，我系 TripGenie。试吓用智慧搜寻，获取旅游灵感！</View>
       </View>
     </View>

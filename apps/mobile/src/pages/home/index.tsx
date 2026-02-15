@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Taro from '@tarojs/taro';
-import { Button, Image, Input, Picker, ScrollView, Swiper, SwiperItem, Text, View } from '@tarojs/components';
+import { Button, Image, Input, Picker, Swiper, SwiperItem, Text, View } from '@tarojs/components';
 import { api } from '../../services/api';
-import type { HomeBanner } from '../../types/hotel';
 import { afterDays, toIsoDay } from '../../utils/date';
 import './index.scss';
 
@@ -15,8 +14,8 @@ export default function HomePage() {
   const [checkIn, setCheckIn] = useState(toIsoDay(afterDays(1)).slice(0, 10));
   const [checkOut, setCheckOut] = useState(toIsoDay(afterDays(2)).slice(0, 10));
   const [minStar, setMinStar] = useState('');
-  const [banners, setBanners] = useState<HomeBanner[]>([]);
-  const [featured, setFeatured] = useState<Array<{ id: string; name_cn: string; city: string; cover: string | null; rating: number | null; min_price: number | null }>>([]);
+  const [banners, setBanners] = useState([]);
+  const [featured, setFeatured] = useState([]);
 
   useEffect(() => {
     Promise.all([api.getBanners(), api.getFeatured()])
@@ -38,13 +37,13 @@ export default function HomePage() {
     }
   };
 
-  const onSearch = (preferredKeyword?: string) => {
+  const onSearch = (preferredKeyword) => {
     if (new Date(toIsoDay(checkOut)) <= new Date(toIsoDay(checkIn))) {
       Taro.showToast({ title: '离店日期必须晚于入住', icon: 'none' });
       return;
     }
 
-    const q: Record<string, string> = {
+    const q = {
       city: city || keyword || preferredKeyword || '',
       keyword: preferredKeyword || keyword,
       check_in: toIsoDay(checkIn),

@@ -2,15 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import Taro, { useRouter } from '@tarojs/taro';
 import { Button, Image, ScrollView, Swiper, SwiperItem, Text, View } from '@tarojs/components';
 import { api } from '../../services/api';
-import type { HotelCalendarResponse, ReviewSummary } from '../../types/hotel';
 import { dayLabel } from '../../utils/date';
 import './index.scss';
 
-function toIsoDate(date: Date) {
+function toIsoDate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T00:00:00.000Z`;
 }
 
-function nextDay(iso: string) {
+function nextDay(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   d.setDate(d.getDate() + 1);
@@ -20,9 +19,9 @@ function nextDay(iso: string) {
 export default function HotelDetailPage() {
   const router = useRouter();
   const hotelId = router.params.id || '';
-  const [detail, setDetail] = useState<any>(null);
-  const [summary, setSummary] = useState<ReviewSummary | null>(null);
-  const [calendar, setCalendar] = useState<HotelCalendarResponse | null>(null);
+  const [detail, setDetail] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [calendar, setCalendar] = useState(null);
   const [loading, setLoading] = useState(false);
   const [openDateSheet, setOpenDateSheet] = useState(false);
 
@@ -59,7 +58,7 @@ export default function HotelDetailPage() {
     [detail],
   );
 
-  const goOfferPage = (checkIn: string, checkOut: string) => {
+  const goOfferPage = (checkIn, checkOut) => {
     Taro.navigateTo({
       url: `/pages/room-offers/index?hotelId=${hotelId}&check_in=${encodeURIComponent(checkIn)}&check_out=${encodeURIComponent(checkOut)}&rooms_count=${selectedRooms}`,
     });
@@ -69,16 +68,14 @@ export default function HotelDetailPage() {
     <View className='detail'>
       <View className='hero'>
         <Swiper circular autoplay>
-          {imageList.map((img: any, idx: number) => (
+          {imageList.map((img, idx) => (
             <SwiperItem key={idx}>
               <Image src={img.url} mode='aspectFill' />
             </SwiperItem>
           ))}
         </Swiper>
         <View className='hero-top'>
-          <View className='c-btn' onClick={() => Taro.navigateBack()}>
-            ←
-          </View>
+          <View className='c-btn' onClick={() => Taro.navigateBack()}>←</View>
           <View style='display:flex;gap:8px'>
             <View className='c-btn'>♡</View>
             <View className='c-btn'>↗</View>
@@ -101,10 +98,8 @@ export default function HotelDetailPage() {
         <View className='section-title'>酒店基础信息</View>
         <View className='subtitle'>星级：{'★'.repeat(detail?.star || 0)}</View>
         <View className='tag-grid'>
-          {(detail?.hotel_tags || []).slice(0, 8).map((t: any) => (
-            <View key={t.id || t.tag} className='tag-item'>
-              ✓ {t.tag}
-            </View>
+          {(detail?.hotel_tags || []).slice(0, 8).map((t) => (
+            <View key={t.id || t.tag} className='tag-item'>✓ {t.tag}</View>
           ))}
         </View>
       </View>
@@ -114,9 +109,7 @@ export default function HotelDetailPage() {
         <View className='booking-banner' onClick={() => setOpenDateSheet(true)}>
           <View>
             <View className='subtitle'>入住及退房</View>
-            <View className='banner-main'>
-              {dayLabel(selectedIn)} - {dayLabel(selectedOut)}
-            </View>
+            <View className='banner-main'>{dayLabel(selectedIn)} - {dayLabel(selectedOut)}</View>
           </View>
           <View>
             <View className='subtitle'>房间及住客</View>
@@ -136,14 +129,7 @@ export default function HotelDetailPage() {
                   const inIso = `${d.date}T00:00:00.000Z`;
                   const outIso = nextDay(inIso);
                   return (
-                    <View
-                      key={d.date}
-                      className='date-chip'
-                      onClick={() => {
-                        setSelectedIn(inIso);
-                        setSelectedOut(outIso);
-                      }}
-                    >
+                    <View key={d.date} className='date-chip' onClick={() => { setSelectedIn(inIso); setSelectedOut(outIso); }}>
                       <View style='font-size:24px;font-weight:700'>{d.date.slice(5)}</View>
                       <View style='color:#2f55e7;font-size:26px;font-weight:700'>AUD {Math.round((d.min_price || 0) / 100)}</View>
                     </View>
@@ -153,15 +139,13 @@ export default function HotelDetailPage() {
           </View>
         )}
 
-        <Button className='primary-btn' style='margin-top:10px' onClick={() => goOfferPage(selectedIn, selectedOut)}>
-          搜索房型价格
-        </Button>
+        <Button className='primary-btn' style='margin-top:10px' onClick={() => goOfferPage(selectedIn, selectedOut)}>搜索房型价格</Button>
       </View>
 
       <View className='section'>
         <View className='section-title'>房型价格列表（低到高）</View>
         <ScrollView scrollY style='max-height: 320px;'>
-          {(detail?.room_price_list || []).map((r: any) => (
+          {(detail?.room_price_list || []).map((r) => (
             <View key={r.room_id} style='border-bottom:1px solid #eef1f6;padding:8px 0'>
               <View style='font-size:28px;font-weight:700'>{r.room_name}</View>
               <View className='muted'>可住 {r.max_occupancy} 人 · 可售 {r.available_rooms} 间</View>
@@ -182,45 +166,29 @@ export default function HotelDetailPage() {
           <View className='form-block'>
             <View className='subtitle'>快捷日期（基于价格日历）</View>
             <View className='date-chip-row'>
-              {(calendar?.days || [])
-                .filter((d) => d.is_available)
-                .slice(0, 10)
-                .map((d) => {
-                  const inIso = `${d.date}T00:00:00.000Z`;
-                  const outIso = nextDay(inIso);
-                  const active = selectedIn.startsWith(d.date);
-                  return (
-                    <View
-                      key={d.date}
-                      className={`date-chip ${active ? 'active-chip' : ''}`}
-                      onClick={() => {
-                        setSelectedIn(inIso);
-                        setSelectedOut(outIso);
-                      }}
-                    >
-                      <View style='font-size:24px'>{d.date.slice(5)}</View>
-                      <View style='font-size:24px;font-weight:700'>AUD {Math.round((d.min_price || 0) / 100)}</View>
-                    </View>
-                  );
-                })}
+              {(calendar?.days || []).filter((d) => d.is_available).slice(0, 10).map((d) => {
+                const inIso = `${d.date}T00:00:00.000Z`;
+                const outIso = nextDay(inIso);
+                const active = selectedIn.startsWith(d.date);
+                return (
+                  <View key={d.date} className={`date-chip ${active ? 'active-chip' : ''}`} onClick={() => { setSelectedIn(inIso); setSelectedOut(outIso); }}>
+                    <View style='font-size:24px'>{d.date.slice(5)}</View>
+                    <View style='font-size:24px;font-weight:700'>AUD {Math.round((d.min_price || 0) / 100)}</View>
+                  </View>
+                );
+              })}
             </View>
 
             <View className='room-counter'>
               <Text>房间数量</Text>
               <View className='counter-btns'>
-                <View className='counter-btn' onClick={() => setSelectedRooms((v) => Math.max(1, v - 1))}>
-                  -
-                </View>
+                <View className='counter-btn' onClick={() => setSelectedRooms((v) => Math.max(1, v - 1))}>-</View>
                 <Text>{selectedRooms}</Text>
-                <View className='counter-btn' onClick={() => setSelectedRooms((v) => Math.min(5, v + 1))}>
-                  +
-                </View>
+                <View className='counter-btn' onClick={() => setSelectedRooms((v) => Math.min(5, v + 1))}>+</View>
               </View>
             </View>
 
-            <Button className='primary-btn' onClick={() => setOpenDateSheet(false)}>
-              确认
-            </Button>
+            <Button className='primary-btn' onClick={() => setOpenDateSheet(false)}>确认</Button>
           </View>
         </View>
       )}

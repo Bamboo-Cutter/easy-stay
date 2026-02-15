@@ -1,7 +1,7 @@
-import { PropsWithChildren } from 'react';
 import './app.scss';
 
-function App({ children }: PropsWithChildren) {
+function App(props) {
+  const { children } = props;
   return children;
 }
 
