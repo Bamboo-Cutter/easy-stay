@@ -128,9 +128,8 @@ export class CreateHotelFullDto {
   @IsString()
   type!: string;
 
-  @IsInt()
-  @Min(0)
-  open_year!: number;
+  @IsISO8601()
+  open_year!: string;
 
   @IsOptional()
   @IsEnum(hotel_status)

@@ -13,6 +13,7 @@ import { SetImagesDto } from './dto/set-images.dto';
 import { SetTagsDto } from './dto/set-tags.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpsertPriceDto } from './dto/upsert-price.dto';
+import { SetHotelStatusDto } from './dto/set-hotel-status.dto';
 
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles(user_role.MERCHANT, user_role.ADMIN) // 管理员也能看商户接口（可选）
@@ -48,6 +49,12 @@ export class MerchantController {
   @Patch('hotels/:id')
   updateHotel(@Req() req: any, @Param('id') id: string, @Body() dto: UpsertHotelDto) {
     return this.merchant.updateHotel(req.user.id, id, dto);
+  }
+
+  // 单独修改酒店状态
+  @Patch('hotels/:id/status')
+  setHotelStatus(@Req() req: any, @Param('id') id: string, @Body() dto: SetHotelStatusDto) {
+    return this.merchant.setHotelStatus(req.user.id, id, dto);
   }
 
   // 覆盖设置酒店图片

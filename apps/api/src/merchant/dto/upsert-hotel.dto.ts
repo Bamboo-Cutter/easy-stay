@@ -2,7 +2,7 @@
  * 文件说明：该文件定义了请求参数的数据传输对象（DTO）与校验规则。
  */
 import { Type } from 'class-transformer';
-import { IsArray, IsEnum, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsISO8601, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { hotel_status } from '@prisma/client';
 import { HotelImageItemDto, NearbyPointItemDto, RoomItemDto } from './create-hotel-full.dto';
 
@@ -33,9 +33,8 @@ export class UpsertHotelDto {
   type?: string;
 
   @IsOptional()
-  @IsInt()
-  @Min(0)
-  open_year?: number;
+  @IsISO8601()
+  open_year?: string;
 
   @IsOptional()
   @IsEnum(hotel_status)
