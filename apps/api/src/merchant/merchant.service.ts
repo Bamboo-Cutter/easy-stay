@@ -10,6 +10,7 @@ import { SetImagesDto } from './dto/set-images.dto';
 import { SetTagsDto } from './dto/set-tags.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpsertPriceDto } from './dto/upsert-price.dto';
+import { SetHotelStatusDto } from './dto/set-hotel-status.dto';
 
 @Injectable()
 export class MerchantService {
@@ -83,7 +84,7 @@ export class MerchantService {
         city: dto.city,
         star: dto.star,
         type: dto.type,
-        open_year: dto.open_year,
+        open_year: new Date(dto.open_year),
         status: dto.status ?? 'DRAFT',
         ...(dto.images?.length
           ? {
@@ -172,7 +173,7 @@ export class MerchantService {
       if (dto.city !== undefined) hotelUpdateData.city = dto.city;
       if (dto.star !== undefined) hotelUpdateData.star = dto.star;
       if (dto.type !== undefined) hotelUpdateData.type = dto.type;
-      if (dto.open_year !== undefined) hotelUpdateData.open_year = dto.open_year;
+      if (dto.open_year !== undefined) hotelUpdateData.open_year = new Date(dto.open_year);
       if (dto.status !== undefined) hotelUpdateData.status = dto.status;
 
       if (Object.keys(hotelUpdateData).length > 0) {
@@ -278,6 +279,22 @@ export class MerchantService {
           },
         },
       });
+    });
+  }
+
+  // 单独设置酒店状态并校验所有权
+  async setHotelStatus(userId: string, hotelId: string, dto: SetHotelStatusDto) {
+    const hotel = await this.prisma.hotels.findUnique({ where: { id: hotelId } });
+    if (!hotel) throw new NotFoundException('Hotel not found');
+    if (hotel.merchant_id !== userId) throw new ForbiddenException('Not your hotel');
+    this.assertMerchantStatus(dto.status);
+
+    return this.prisma.hotels.update({
+      where: { id: hotelId },
+      data: {
+        status: dto.status,
+        reject_reason: null,
+      },
     });
   }
 

@@ -52,7 +52,7 @@ export class AdminService {
         city: dto.city,
         star: dto.star,
         type: dto.type,
-        open_year: dto.open_year,
+        open_year: new Date(dto.open_year),
         status: dto.status ?? hotel_status.PENDING,
         ...(dto.images?.length
           ? {
@@ -132,7 +132,7 @@ export class AdminService {
       if (dto.city !== undefined) hotelUpdateData.city = dto.city;
       if (dto.star !== undefined) hotelUpdateData.star = dto.star;
       if (dto.type !== undefined) hotelUpdateData.type = dto.type;
-      if (dto.open_year !== undefined) hotelUpdateData.open_year = dto.open_year;
+      if (dto.open_year !== undefined) hotelUpdateData.open_year = new Date(dto.open_year);
       if (dto.status !== undefined) hotelUpdateData.status = dto.status;
 
       if (Object.keys(hotelUpdateData).length > 0) {
@@ -306,6 +306,23 @@ export class AdminService {
     return this.prisma.hotels.update({
       where: { id: hotelId },
       data: { status: 'REJECTED', reject_reason: reason },
+    });
+  }
+
+  // 修改已拒绝酒店的拒绝原因
+  async updateRejectReason(hotelId: string, reason: string) {
+    const hotel = await this.prisma.hotels.findFirst({
+      where: { id: hotelId, status: { not: hotel_status.DRAFT } },
+      select: { id: true, status: true },
+    });
+    if (!hotel) throw new NotFoundException('Hotel not found');
+    if (hotel.status !== hotel_status.REJECTED) {
+      throw new BadRequestException('Only REJECTED hotel can update reject reason');
+    }
+
+    return this.prisma.hotels.update({
+      where: { id: hotelId },
+      data: { reject_reason: reason },
     });
   }
 

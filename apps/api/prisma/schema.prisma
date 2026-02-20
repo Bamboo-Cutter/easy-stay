@@ -46,7 +46,7 @@ model hotels {
   city           String
   star           Int
   type           String
-  open_year      Int
+  open_year      DateTime
   status         hotel_status @default(DRAFT)
   reject_reason  String?
 

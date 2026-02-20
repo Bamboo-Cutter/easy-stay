@@ -9,6 +9,7 @@ import { AdminService } from './admin.service';
 import { SetRoomInventoryDto } from './dto/set-room-inventory.dto';
 import { InventoryRangeDto } from './dto/inventory-range.dto';
 import { SetHotelStatusDto } from './dto/set-hotel-status.dto';
+import { UpdateRejectReasonDto } from './dto/update-reject-reason.dto';
 import { user_role } from '@prisma/client';
 import { CreateHotelFullDto } from '../merchant/dto/create-hotel-full.dto';
 import { UpsertHotelDto } from '../merchant/dto/upsert-hotel.dto';
@@ -65,6 +66,12 @@ export class AdminController {
   @Post('hotels/:id/reject')
   reject(@Param('id') id: string, @Body() body: { reason: string }) {
     return this.admin.reject(id, body?.reason ?? 'rejected');
+  }
+
+  // 管理员修改酒店拒绝原因（仅 REJECTED 状态）
+  @Patch('hotels/:id/reject')
+  updateRejectReason(@Param('id') id: string, @Body() dto: UpdateRejectReasonDto) {
+    return this.admin.updateRejectReason(id, dto.reason);
   }
 
   // 管理员直接设置酒店状态（不允许设为 DRAFT）

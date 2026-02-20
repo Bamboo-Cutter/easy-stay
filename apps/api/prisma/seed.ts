@@ -76,6 +76,7 @@ async function main() {
     const type = types[i % types.length];
     const star = (i % 5) + 1;
     const openYear = 2008 + (i % 17);
+    const openDate = new Date(openYear, i % 12, ((i % 27) + 1));
 
     const created = await prisma.hotels.create({
       data: {
@@ -85,7 +86,7 @@ async function main() {
         city,
         star,
         type,
-        open_year: openYear,
+        open_year: openDate,
         status,
         reject_reason: status === hotel_status.REJECTED ? '资料不完整（演示）' : null,
         merchant_id: merchant.id,
