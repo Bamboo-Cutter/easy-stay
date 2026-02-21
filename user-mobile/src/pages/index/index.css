@@ -1,0 +1,358 @@
+.home {
+  position: relative;   /* 避免内部绝对定位元素影响布局 */
+  width: 100vw;         /* 全宽 */
+  min-height: 100vh;    /* 至少全屏高度 */
+  overflow-x: hidden;   /* 避免横向滚动偏移 */
+  padding: 0 20rpx;     /* 你的内边距保留 */
+  margin: 0;            /* 避免默认 margin */
+  box-sizing: border-box;
+  background: #f5f6f8;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ===== Banner ===== */
+.banner {
+  position: relative;
+  height: 300rpx;
+  border-radius: 24rpx;
+  overflow: hidden;
+}
+
+.banner-img {
+  width: 100%;
+  height: 100%;
+}
+
+.banner-mask {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  padding: 20rpx;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+}
+
+.banner-text {
+  color: #fff;
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+/* ===== 查询卡片 ===== */
+.search-card {
+  margin-top: 30rpx;
+  background: #fff;
+  border-radius: 32rpx;
+  padding: 40rpx;
+  box-shadow: 0 10rpx 40rpx rgba(0, 0, 0, 0.08);
+  /* transform: translateY(60 rpx); */
+}
+
+/* 行 */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+/* 城市 */
+.city {
+  font-size: 34rpx;
+  font-weight: bold;
+}
+
+/* 搜索框 */
+.search-input {
+  flex: 1;
+  margin-left: 20rpx;
+  background: #f2f3f5;
+  border-radius: 50rpx;
+  padding: 10rpx 20rpx;
+}
+
+/* 日期 */
+.date-box {
+  display: flex;
+  align-items: center;
+  font-size: 28rpx;
+  height: 80rpx;
+}
+
+.date-text {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #222;
+}
+
+.date-divider {
+  margin: 0 10rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #222;
+}
+
+.nights {
+  font-size: 28rpx;
+  color: #1677ff;
+}
+
+
+/* 星级选择 */
+.star-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.form-label {
+  font-size: 26rpx;
+  color: #000000;
+  margin-right: 3%;
+  width: 30%;
+  font-weight: 550;
+}
+
+
+.star-select-box {
+  min-width: 65%;
+  padding: 18rpx 12rpx;
+  border-radius: 40rpx;
+  font-size: 23rpx;
+  color: #333;
+  transition: all 0.2s;
+}
+
+.star-select-box:active {
+  transform: scale(0.96);
+}
+
+/* 价格 */
+.price-box {
+  display: flex;
+  align-items: center;
+  background: #f2f3f5;
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  width: 200rpx;
+}
+
+.price-box Input {
+  width: 120rpx;
+  text-align: center;
+  font-size: 25rpx;
+}
+
+/* Tags */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.tag {
+  background: #f2f3f5;
+  padding: 10rpx 20rpx;
+  border-radius: 30rpx;
+  font-size: 24rpx;
+}
+
+.tag-active {
+  background: #1677ff;
+  color: #fff;
+}
+
+/* 按钮 */
+.search-btn {
+  background: linear-gradient(90deg, #1677ff, #4096ff);
+  color: #fff;
+  border-radius: 50rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  font-size: 32rpx;
+}
+
+
+/* 弹层 */
+.mask {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 9999;
+
+  display: flex;
+  align-items: flex-end;
+}
+
+.popup {
+  width: 100%;
+  background: #fff;
+  border-radius: 40rpx 40rpx 0 0;
+  padding: 40rpx;
+  animation: slideUp 0.25s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* 城市弹层 */
+.city-popup {
+  max-height: 70%;
+  padding: 0;
+  overflow: hidden;
+}
+
+.popup-header {
+  padding: 30rpx;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.popup-title {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.popup-body {
+  max-height: 600rpx;
+  padding: 20rpx 30rpx;
+}
+
+.city-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  padding: 30rpx;
+}
+
+.city-tag {
+  width: 30%;                 /* 每行三个 */
+  text-align: center;
+  padding: 24rpx 0;
+  border-radius: 30rpx;
+  background: #f5f6f8;
+  font-size: 28rpx;
+  transition: all 0.2s;
+}
+
+.city-tag:active {
+  transform: scale(0.95);
+}
+
+.active-city {
+  background: #1677ff;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* 日历弹层 */
+.calendar-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-bottom: 30rpx;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.calendar-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 20rpx;
+  box-sizing: border-box;
+}
+
+.calendar-day {
+  width: 14.2%;
+  text-align: center;
+  padding: 20rpx 0;
+  border-radius: 0%;
+}
+
+.calendar-day.active {
+  background: #1677ff;
+  color: #fff;
+}
+
+.calendar-day.in-range {
+  background: #1677ff;
+  color: #fff;
+  border-radius: 0; /* 让中间连续 */
+}
+.calendar-day.disabled {
+  color: #ccc;
+}
+
+.calendar-day.disabled {
+  pointer-events: none;
+}
+
+.calendar-btn {
+  margin-top: 40rpx;
+  background: #1677ff;
+  color: #fff;
+}
+
+/* 星级弹层 */
+.star-popup {
+  padding: 0;
+  max-height: 70%;
+  display: flex;
+  flex-direction: column;
+}
+
+.star-grid {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  padding: 30rpx;
+  gap: 20rpx;
+}
+
+.star-item {
+  flex: 1 1 45%;
+  padding: 26rpx 0;
+  text-align: center;
+  border-radius: 30rpx;
+  background: #f5f6f8;
+  font-size: 28rpx;
+  transition: all 0.2s;
+}
+
+.star-item:active {
+  transform: scale(0.95);
+}
+
+.active-star {
+  background: #1677ff;
+  color: #fff;
+  font-weight: 600;
+}
+
+.star-footer {
+  padding: 30rpx;
+  border-top: 1px solid #eee;
+}
+
+.star-confirm-btn {
+  background: linear-gradient(90deg, #1677ff, #4096ff);
+  color: #fff;
+  border-radius: 50rpx;
+  height: 90rpx;
+  line-height: 90rpx;
+  font-size: 32rpx;
+}
