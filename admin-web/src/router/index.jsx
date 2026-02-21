@@ -8,11 +8,11 @@ import AdminHotelList from '@/pages/admin/AdminHotelList.jsx'
 import HomeMerchant from '@/pages/merchant/MerchantHome.jsx'
 import MerchantHotelList from '@/pages/merchant/MerchantHotelList.jsx'
 import MerchantHotelAdd from '@/pages/merchant/MerchantHotelAdd.jsx'
-import MerchantHotelAudit from '@/pages/merchant/MerchantHotelAudit.jsx'
 import Login from '@/pages/login/login.jsx'
 import Register from '@/pages/register/register.jsx'
 import HotelDetailView from "@/pages/merchant/HotelDetailView.jsx"
 import HotelDetailEdit from "@/pages/merchant/HotelDetailEdit.jsx"
+import CalendarEdit from "@/pages/merchant/CalendarEdit.jsx"
 
 
 
@@ -50,12 +50,8 @@ const routes = [
                 element: <MerchantHotelList />,
             },
             {
-                path: "/merchant-hotelAdd",
+                path: "/hotelAdd",
                 element: <MerchantHotelAdd />,
-            },
-            {
-                path: "/merchant-hotelAudit",
-                element: <MerchantHotelAudit />,
             },
         ]
     },
@@ -66,6 +62,10 @@ const routes = [
     {
         path: "/hotel-detail/:hotelId/edit",
         element: <HotelDetailEdit />,
+    },
+    {
+        path: "/calendar-edit/:roomId",
+        element: <CalendarEdit />,
     },
 ]
 

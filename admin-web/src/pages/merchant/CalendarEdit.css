@@ -1,0 +1,137 @@
+.ce-wrapper {
+  min-height: 100vh;
+  background: #f5f7fa;
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.ce-card {
+  width: 900px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+/* 头部 */
+.ce-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.ce-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+}
+
+.ce-month-switch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.ce-month-switch button {
+  background: #1677ff;
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.ce-month-switch button:hover {
+  background: #4096ff;
+}
+
+/* 网格 */
+.ce-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+/* 星期 */
+.ce-week {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #888;
+}
+
+/* 日期格子 */
+.ce-cell {
+  height: 80px;
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: 0.2s;
+}
+
+.ce-cell:hover {
+  background: #f0f7ff;
+}
+
+.ce-cell.empty {
+  background: transparent;
+}
+
+/* 日期数字 */
+.ce-day {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 输入框 */
+.ce-input {
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 13px;
+  outline: none;
+  transition: 0.2s;
+  width: 92px;
+  height: 32px;
+}
+.ce-input::placeholder {
+  color: #e8cc98;
+}
+
+.ce-input:focus {
+  border-color: #1677ff;
+  box-shadow: 0 0 0 2px rgba(22,119,255,0.15);
+}
+
+/* 底部 */
+.ce-footer {
+  margin-top: 30px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ce-save-btn {
+  background: #1677ff;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-left: 10px;
+}
+
+.ce-save-btn:hover {
+  background: #4096ff;
+}

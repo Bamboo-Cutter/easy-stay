@@ -60,19 +60,20 @@ export default function Layout() {
               <div className="menu-item" onClick={() => navigate("/merchant-hotelList")}>
                 酒店列表
               </div>
-              <div className="menu-item" onClick={() => navigate("/merchant-hotelAdd")}>
+              <div className="menu-item" onClick={() => navigate("/hotelAdd")}>
                 添加酒店
-              </div>
-              <div className="menu-item" onClick={() => navigate("/merchant-hotelAudit")}>
-                审核中酒店
               </div>
             </>
           )}
 
           {role === "ADMIN" && (
+            <>
             <div className="menu-item" onClick={() => navigate("/admin-hotelList")}>
               酒店列表
             </div>
+            <div className="menu-item" onClick={() => navigate("/hotelAdd")}>
+              添加酒店
+            </div></>
           )}
         </nav>
       </aside>

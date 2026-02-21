@@ -9,48 +9,211 @@
 }
 
 .form {
-  max-width: 600px;
+  max-width: 700px;
 }
 
 .form-item {
   display: flex;
   flex-direction: column;
   margin-bottom: 15px;
+  margin-top: 30px;
 }
 
 .form-item label {
   margin-bottom: 6px;
   font-weight: 500;
+  /* 或 */
+  font-size: 1.125em;  /* 放大 */
 }
 
 .form-item input,
 .form-item select {
   height: 36px;
-  padding: 0 10px;
+  padding: 3 10px;
   border: 1px solid #dcdcdc;
   border-radius: 4px;
+  margin: 4px
 }
 
-.status {
-  display: inline-block;
-  padding: 4px 10px;
-  background: #fff7e6;
-  color: #fa8c16;
+/* 酒店标签输入框和删除按钮 */
+.form-item span input {
+  width: 120px;
+  margin-right: 4px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
   border-radius: 4px;
-  width: fit-content;
+  font-size: 14px;
 }
 
-.submit-btn {
-  margin-top: 20px;
-  width: 100%;
-  height: 40px;
-  background: #1677ff;
-  color: #fff;
+.form-item span button {
+  padding: 2px 6px;
+  font-size: 12px;
+  background-color: #ff4d4f;
+  color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
 }
 
-.submit-btn:hover {
-  background: #4096ff;
+.form-item span button:hover {
+  background-color: #d9363e;
+}
+
+/* 酒店图片 */
+.imagesAdd-grid-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px; /* 图片间距 */
+  padding: 4px;
+}
+
+.imageAdd-wrapper {
+  overflow: hidden;
+  position: relative;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.imageAdd-wrapper:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+}
+
+.hotelAdd-image {
+  width: 100%;
+  height: 140px; /* 固定高度，也可以改为 auto 让比例自适应 */
+  object-fit: cover;
+  display: block;
+}
+
+/* 图片编辑输入框 */
+.imageAdd-wrapper input {
+  width: calc(95% - 40px);
+  padding: 6px 8px;
+  margin: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.imageAdd-wrapper button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 4px 8px;
+  background-color: #ff4d4f;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imageAdd-wrapper button:hover {
+  background-color: #d9363e;
+}
+
+.roomsAdd {
+  margin-top: 40px;
+}
+
+.roomAdd-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: #fafafa;
+  margin-bottom: 6px;
+  border: 1px solid #eee;
+  position: relative;
+}
+
+/* 房间和数组卡片 */
+.roomsAdd h2 {
+  margin-bottom: 12px;
+  font-size: 20px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 4px;
+}
+
+
+/* 房间卡片输入框 */
+.roomAdd-card input, .room-card select {
+  width: calc(50% - 12px);
+  margin: 6px 6px 6px 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+/* 删除按钮 */
+.roomAdd-card button {
+  position: absolute;
+  top: 2px;
+  right: 8px;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.roomAdd-card button:hover {
+  background-color: #d9363e;
+}
+
+/* 添加按钮 */
+.form-item > button {
+  width: 10%;
+  padding: 4px 4px;
+  margin-top: 8px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.form-item > button:hover {
+  background-color: #096dd9;
+}
+
+/* 保存按钮 */
+.button-group {
+  display: flex;
+  gap: 16px;           /* 按钮间距 */
+  justify-content: flex-end;  /* 靠右对齐，或 center 居中 */
+  margin-top: 20px;
+}
+
+.btn-draft {
+  padding: 10px 24px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  color: #666;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-draft:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.btn-submit {
+  padding: 10px 24px;
+  border: none;
+  background: #1890ff;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-submit:hover {
+  background: #40a9ff;
 }

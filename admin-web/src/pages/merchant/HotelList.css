@@ -1,0 +1,130 @@
+.hotel-list {  
+  background: #fff;
+  padding: 16px;
+  border-radius: 6px;
+  /* height: 100%; */
+}
+ /* =admin-hotel */
+
+ 
+/* Tab */
+.tab-bar {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.tab-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  background: #f0f2f5;
+}
+
+.tab-item.active {
+  background: #1677ff;
+  color: #fff;
+}
+
+/* 酒店列表 */
+.hotel-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.hotel-table th,
+.hotel-table td {
+  border: 1px solid #eee;
+  padding: 10px;
+  text-align: left;
+}
+
+.hotel-name {
+  font-size: 12px;
+  color: #999;
+}
+
+.hotel-en {
+  font-size: 12px;
+  color: #999;
+}
+
+.detail-link {
+  display: inline-block;
+  margin-top: 4px;
+  color: #1677ff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.detail-link:hover {
+  text-decoration: underline;
+}
+
+
+/* 状态颜色 */
+.status.APPROVED {
+  color: #52c41a;
+}
+
+.status.PENDING {
+  color: #faad14;
+}
+
+.status.REJECTED {
+  color: #ff4d4f;
+}
+
+.status.OFFLINE {
+  color: #999;
+}
+
+.status.DRAFT {
+  color: #84b8e3;
+}
+
+.audit-link {
+  color: #1677ff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* 审核处理 */
+.audit-section {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.audit-section textarea {
+  min-height: 80px;
+  resize: none;
+}
+
+
+.audit-section textarea {
+  min-height: 80px;
+  resize: none;
+}
+
+.modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+  text-align: right;
+}
+
+.modal-footer button {
+  background: #1677ff;
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-footer button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}

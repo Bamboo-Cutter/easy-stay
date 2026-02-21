@@ -33,7 +33,7 @@ export default function Login() {
     e.preventDefault();
     console.log('1. 表单数据:', { email, password });
     try {
-      const res = await axios.post('http://localhost:3000/auth/login', {
+      const res = await axios.post('api/auth/login', {
         email,
         password
       });
@@ -51,7 +51,7 @@ export default function Login() {
 
     try {
       const res = await axios.post(
-        "http://localhost:3000/auth/login",
+        "/api/auth/login",
         {
           email,
           password,

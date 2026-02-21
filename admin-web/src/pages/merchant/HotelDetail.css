@@ -23,6 +23,22 @@
   font-size: 14px;
 }
 
+.hotel-title h2 {
+  margin-bottom: 12px;
+  font-size: 20px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 4px;
+}
+
+.hotel-title input {
+  width: 300px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
 .hotel-info {
   margin-top: 24px;
   display: grid;
@@ -34,23 +50,57 @@
   background: #f7f9fb;
   padding: 16px;
   border-radius: 12px;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.info-item > input{
+  width: 60%;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* 添加按钮 */
+.info-item > button {
+  padding: 6px 12px;
+  margin-top: 8px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* 酒店标签输入框和删除按钮 */
+.info-item span input {
+  width: 120px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  padding: 4px 6px;
+  border: 1px solid #999;
+  border-radius: 4px;
   font-size: 14px;
 }
 
-.rooms {
-  margin-top: 40px;
+.info-item span button {
+  padding: 2px 6px;
+  font-size: 12px;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-.room-card {
-  padding: 16px;
-  border-radius: 12px;
-  background: #fafafa;
-  margin-bottom: 16px;
-  border: 1px solid #eee;
-  position: relative;
+.info-item span button:hover {
+  background-color: #d9363e;
 }
 
 
+/* 酒店图片 */
 .images-grid-container {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -76,4 +126,285 @@
   height: 140px; /* 固定高度，也可以改为 auto 让比例自适应 */
   object-fit: cover;
   display: block;
+}
+
+/* 图片编辑输入框 */
+.image-wrapper input {
+  width: calc(95% - 40px);
+  padding: 6px 8px;
+  margin: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.image-wrapper button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 4px 8px;
+  background-color: #ff4d4f;
+  border: none;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-wrapper button:hover {
+  background-color: #d9363e;
+}
+
+
+
+.rooms {
+  margin-top: 40px;
+}
+/* 房间和数组卡片 */
+.rooms h2 {
+  margin-bottom: 12px;
+  font-size: 20px;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 4px;
+}
+/* 添加按钮 */
+.rooms > button {
+  padding: 6px 12px;
+  margin-top: 8px;
+  background-color: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.rooms > button:hover {
+  background-color: #096dd9;
+}
+
+.room-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 30px;
+  border: 1px solid #eee;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+/* 左侧信息盒子 */
+.room-info-box {
+  flex: 1;
+  min-width: 250px;
+}
+
+.room-info-box div {
+  margin-bottom: 8px;
+}
+
+/* 右侧日历盒子 */
+.room-calendar-box {
+  flex: 2;
+  min-width: 400px;
+}
+
+.calendar-container {
+  width: 520px;
+  background: #ffffff;
+  border: 1px solid #eaeaea;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* 标题 */
+.calendar-title {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  margin-top: 0px;
+  color: #333;
+}
+
+.calendar-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.calendar-edit-btn {
+  background: #1677ff;
+  color: white;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.calendar-edit-btn:hover {
+  background: #4096ff;
+}
+
+
+/* 月份导航 */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-weight: 400;
+}
+
+.calendar-header button {
+  background: #f5f7fa;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.calendar-header button:hover {
+  background: #e6f4ff;
+}
+
+/* 网格 */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+/* 星期 */
+.calendar-week {
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+  font-weight: 500;
+}
+
+/* 日期格子 */
+.calendar-cell {
+  height: 55px;
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 6px;
+  position: relative;
+  transition: 0.2s;
+}
+
+.calendar-cell:hover {
+  background: #f0f7ff;
+}
+
+/* 空格 */
+.calendar-cell.empty {
+  background: transparent;
+}
+
+/* 日期数字 */
+.calendar-day {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* 价格 */
+.calendar-price {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ff4d4f;
+}
+
+
+
+/* 附近情况卡片 */
+.nearby-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: #fafafa;
+  margin-bottom: 16px;
+  border: 1px solid #eee;
+  position: relative;
+}
+
+/* 房间卡片输入框 */
+.nearby-card input, .nearby-card select {
+  width: calc(50% - 12px);
+  margin: 6px 6px 6px 0;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+/* 删除按钮 */
+.nearby-card button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.nearby-card button:hover {
+  background-color: #d9363e;
+}
+
+
+
+/* 浮动右下角按钮 */
+.fixed-edit-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.fixed-edit-button button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.fixed-edit-button button:first-child {
+  background-color: #52c41a; /* 保存 */
+  color: white;
+}
+
+.fixed-edit-button button:first-child:hover {
+  background-color: #389e0d;
+}
+
+.fixed-edit-button button:last-child {
+  background-color: #ff4d4f; /* 取消 */
+  color: white;
+}
+
+.fixed-edit-button button:last-child:hover {
+  background-color: #d9363e;
+}
+
+.fixed-edit-button button.edit-mode {
+  background-color: #1890ff; /* 编辑 */
+  color: white;
+}
+
+.fixed-edit-button button.edit-mode:hover {
+  background-color: #096dd9;
 }
