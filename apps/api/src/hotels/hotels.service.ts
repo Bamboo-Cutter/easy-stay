@@ -33,11 +33,30 @@ export class HotelsService {
               { name_cn: { contains: q.keyword, mode: 'insensitive' } },
               { name_en: { contains: q.keyword, mode: 'insensitive' } },
               { address: { contains: q.keyword, mode: 'insensitive' } },
+              {
+                nearby_points: {
+                  some: {
+                    name: { contains: q.keyword, mode: 'insensitive' },
+                  },
+                },
+              },
             ],
           }
         : {}),
       ...(q.breakfast ? { rooms: { some: { breakfast: true } } } : {}),
       ...(q.refundable ? { rooms: { some: { refundable: true } } } : {}),
+      ...(q.nearby_type || q.nearby_keyword
+        ? {
+            nearby_points: {
+              some: {
+                ...(q.nearby_type ? { type: q.nearby_type } : {}),
+                ...(q.nearby_keyword
+                  ? { name: { contains: q.nearby_keyword, mode: 'insensitive' } }
+                  : {}),
+              },
+            },
+          }
+        : {}),
     };
 
     const allItems = await this.prisma.hotels.findMany({
@@ -46,6 +65,7 @@ export class HotelsService {
       include: {
         hotel_images: { orderBy: { sort: 'asc' } },
         hotel_tags: true,
+        nearby_points: true,
         review_summary: true,
         rooms: {
           orderBy: { base_price: 'asc' },
@@ -76,6 +96,10 @@ export class HotelsService {
     });
 
     const roomsCount = q.rooms_count ?? 1;
+    const requiredGuests =
+      q.adults !== undefined || q.children !== undefined
+        ? (q.adults ?? 0) + (q.children ?? 0)
+        : 0;
     const withComputed = allItems.map((hotel) => {
       const roomMetrics = this.computeRoomMetrics(
         hotel.rooms,
@@ -83,19 +107,39 @@ export class HotelsService {
         q.check_out,
         roomsCount,
       );
-      const minNightlyPrice = roomMetrics.length ? Math.min(...roomMetrics.map((x) => x.nightlyPrice)) : null;
-      const minTotalPrice = roomMetrics.length ? Math.min(...roomMetrics.map((x) => x.totalPrice)) : null;
-      const availableCount = roomMetrics.filter((x) => x.isAvailable).length;
+      const guestFitRoomMetrics = requiredGuests > 0
+        ? roomMetrics.filter((x) => x.room.max_occupancy >= requiredGuests)
+        : roomMetrics;
+      const minNightlyPrice = guestFitRoomMetrics.length
+        ? Math.min(...guestFitRoomMetrics.map((x) => x.nightlyPrice))
+        : null;
+      const minTotalPrice = guestFitRoomMetrics.length
+        ? Math.min(...guestFitRoomMetrics.map((x) => x.totalPrice))
+        : null;
+      const availableCount = guestFitRoomMetrics.filter((x) => x.isAvailable).length;
+      const nearbyCandidates = (hotel.nearby_points ?? []).filter((p) => {
+        if (q.nearby_type && p.type !== q.nearby_type) return false;
+        if (q.nearby_keyword && !p.name.toLowerCase().includes(q.nearby_keyword.toLowerCase())) return false;
+        return true;
+      });
+      const nearestNearby = nearbyCandidates
+        .filter((p) => typeof p.distance_km === 'number')
+        .sort((a, b) => (a.distance_km ?? Number.MAX_SAFE_INTEGER) - (b.distance_km ?? Number.MAX_SAFE_INTEGER))[0] ?? null;
 
       return {
         ...hotel,
         min_nightly_price: minNightlyPrice,
         min_total_price: minTotalPrice,
         available_room_types: availableCount,
+        guest_fit_room_types: guestFitRoomMetrics.length,
+        nearby_match_count: nearbyCandidates.length,
+        nearest_nearby_point: nearestNearby,
+        nearest_nearby_distance_km: nearestNearby?.distance_km ?? null,
       };
     });
 
     const filtered = withComputed.filter((hotel) => {
+      if (requiredGuests > 0 && (hotel.guest_fit_room_types ?? 0) <= 0) return false;
       const price = hotel.min_nightly_price ?? hotel.rooms[0]?.base_price ?? 0;
       if (q.min_price !== undefined && price < q.min_price) return false;
       if (q.max_price !== undefined && price > q.max_price) return false;
@@ -107,6 +151,15 @@ export class HotelsService {
       const priceB = b.min_nightly_price ?? b.rooms[0]?.base_price ?? Number.MAX_SAFE_INTEGER;
       const ratingA = a.review_summary?.rating ?? 0;
       const ratingB = b.review_summary?.rating ?? 0;
+      const nearbyDistA = a.nearest_nearby_distance_km ?? Number.MAX_SAFE_INTEGER;
+      const nearbyDistB = b.nearest_nearby_distance_km ?? Number.MAX_SAFE_INTEGER;
+
+      if (q.nearby_sort === 'distance_asc') {
+        if (nearbyDistA !== nearbyDistB) return nearbyDistA - nearbyDistB;
+      }
+      if (q.nearby_sort === 'distance_desc') {
+        if (nearbyDistA !== nearbyDistB) return nearbyDistB - nearbyDistA;
+      }
 
       switch (q.sort) {
         case 'price_asc':
@@ -120,6 +173,7 @@ export class HotelsService {
         case 'newest':
           return b.created_at.getTime() - a.created_at.getTime();
         case 'recommended':
+        case 'smart':
         default:
           return (ratingB * 100 - priceB / 100) - (ratingA * 100 - priceA / 100);
       }
@@ -142,6 +196,12 @@ export class HotelsService {
         min_rating: q.min_rating,
         breakfast: !!q.breakfast,
         refundable: !!q.refundable,
+        nearby_type: q.nearby_type,
+        nearby_keyword: q.nearby_keyword,
+        nearby_sort: q.nearby_sort ?? 'none',
+        adults: q.adults,
+        children: q.children,
+        rooms_count: q.rooms_count,
       },
     };
   }
@@ -307,6 +367,19 @@ export class HotelsService {
       select: { rating: true },
     });
 
+    const nearbyPoints = await this.prisma.nearby_points.findMany({
+      where: {
+        hotel: {
+          status: 'APPROVED',
+          ...(city ? { city } : {}),
+        },
+      },
+      select: {
+        type: true,
+        name: true,
+      },
+    });
+
     const prices = rooms.map((r) => r.base_price);
     const stars = new Map<number, number>();
     const breakfastCount = rooms.filter((r) => r.breakfast).length;
@@ -320,6 +393,18 @@ export class HotelsService {
     for (const t of tags) {
       tagCounter.set(t.tag, (tagCounter.get(t.tag) ?? 0) + 1);
     }
+
+    const nearbyCounter = new Map<string, number>();
+    for (const p of nearbyPoints) {
+      const key = `${p.type}::${p.name}`;
+      nearbyCounter.set(key, (nearbyCounter.get(key) ?? 0) + 1);
+    }
+    const nearbyOptions = Array.from(nearbyCounter.entries())
+      .map(([key, count]) => {
+        const [type, name] = key.split('::');
+        return { type, name, count };
+      })
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'zh-CN'));
 
     const ratingBands = {
       '6_plus': summaries.filter((s) => s.rating >= 6).length,
@@ -346,6 +431,10 @@ export class HotelsService {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 12)
         .map(([tag, count]) => ({ tag, count })),
+      nearby_points: {
+        metro: nearbyOptions.filter((x) => x.type === 'metro').slice(0, 20),
+        attraction: nearbyOptions.filter((x) => x.type === 'attraction').slice(0, 20),
+      },
     };
   }
 
@@ -435,6 +524,12 @@ export class HotelsService {
     if (!hotel) throw new NotFoundException('Hotel not found');
 
     const roomsCount = q.rooms_count ?? 1;
+    const today = this.startOfDay(new Date());
+    const hasPastCheckIn = !!q.check_in && this.startOfDay(q.check_in) < today;
+    const requiredGuests =
+      q.adults !== undefined || q.children !== undefined
+        ? (q.adults ?? 0) + (q.children ?? 0)
+        : null;
     const metrics = this.computeRoomMetrics(hotel.rooms, q.check_in, q.check_out, roomsCount);
 
     return {
@@ -442,19 +537,37 @@ export class HotelsService {
       check_in: q.check_in ?? null,
       check_out: q.check_out ?? null,
       rooms_count: roomsCount,
-      items: metrics.map((m) => ({
-        room_id: m.room.id,
-        room_name: m.room.name,
-        base_price: m.room.base_price,
-        refundable: m.room.refundable,
-        breakfast: m.room.breakfast,
-        max_occupancy: m.room.max_occupancy,
-        nightly_price: m.nightlyPrice,
-        total_price: m.totalPrice,
-        nights: m.nights,
-        available_rooms: m.availableRooms,
-        is_available: m.isAvailable,
-      })),
+      adults: q.adults ?? null,
+      children: q.children ?? null,
+      items: metrics.map((m) => {
+        const capacityFit =
+          requiredGuests && requiredGuests > 0 ? m.room.max_occupancy >= requiredGuests : true;
+        const isBookable = !hasPastCheckIn && capacityFit && m.isAvailable;
+        const availabilityStatus = hasPastCheckIn
+          ? 'PAST_DATE'
+          : !capacityFit
+          ? 'CAPACITY_MISMATCH'
+          : m.isAvailable
+            ? 'BOOKABLE'
+            : 'SOLD_OUT';
+
+        return {
+          room_id: m.room.id,
+          room_name: m.room.name,
+          base_price: m.room.base_price,
+          refundable: m.room.refundable,
+          breakfast: m.room.breakfast,
+          max_occupancy: m.room.max_occupancy,
+          nightly_price: m.nightlyPrice,
+          total_price: m.totalPrice,
+          nights: m.nights,
+          available_rooms: m.availableRooms,
+          is_available: m.isAvailable,
+          capacity_fit: capacityFit,
+          is_bookable: isBookable,
+          availability_status: availabilityStatus,
+        };
+      }),
     };
   }
 
@@ -466,13 +579,23 @@ export class HotelsService {
     });
     if (!hotel) throw new NotFoundException('Hotel not found');
 
-    const baseMonth = q.month ? `${q.month}-01T00:00:00.000Z` : new Date().toISOString();
-    const monthStart = this.startOfDay(baseMonth);
-    monthStart.setUTCDate(1);
+    let monthStart: Date;
+    if (q.month) {
+      const [yearText, monthText] = String(q.month).split('-');
+      const year = Number(yearText);
+      const month = Number(monthText);
+      monthStart = new Date(Date.UTC(year, Math.max(0, month - 1), 1, 0, 0, 0, 0));
+    } else {
+      const now = new Date();
+      monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0));
+    }
     const nextMonthStart = new Date(monthStart);
     nextMonthStart.setUTCMonth(nextMonthStart.getUTCMonth() + 1);
 
     const roomIds = hotel.rooms.map((r) => r.id);
+    const fallbackMinBasePrice = hotel.rooms.length
+      ? Math.min(...hotel.rooms.map((r) => r.base_price))
+      : null;
     const [priceRows, invRows] = await Promise.all([
       this.prisma.price_calendar.findMany({
         where: {
@@ -513,7 +636,7 @@ export class HotelsService {
       const dayInv = invByDate.get(key) ?? [];
       days.push({
         date: key,
-        min_price: dayPrices.length ? Math.min(...dayPrices) : null,
+        min_price: dayPrices.length ? Math.min(...dayPrices) : fallbackMinBasePrice,
         is_available: dayInv.length ? dayInv.some((x) => x > 0) : true,
       });
       cursor.setUTCDate(cursor.getUTCDate() + 1);

@@ -18,4 +18,16 @@ export class StayRangeDto {
   @IsInt()
   @Min(1)
   rooms_count: number = 1;
+
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  adults?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(0)
+  children?: number;
 }

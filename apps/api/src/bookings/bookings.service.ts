@@ -14,6 +14,10 @@ export class BookingsService {
   async create(dto: CreateBookingDto) {
     const checkIn = this.startOfDay(dto.check_in);
     const checkOut = this.startOfDay(dto.check_out);
+    const today = this.startOfDay(new Date());
+    if (checkIn < today) {
+      throw new BadRequestException('check_in must be today or later');
+    }
     if (checkOut <= checkIn) {
       throw new BadRequestException('check_out must be later than check_in');
     }

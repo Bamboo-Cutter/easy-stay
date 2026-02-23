@@ -42,6 +42,18 @@ export class ListHotelsDto {
   @IsOptional()
   @Transform(({ value }) => Number(value))
   @IsInt()
+  @Min(1)
+  adults?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(0)
+  children?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
   @Min(0)
   min_price?: number;
 
@@ -80,11 +92,24 @@ export class ListHotelsDto {
 
   @IsOptional()
   @IsString()
+  nearby_type?: string;
+
+  @IsOptional()
+  @IsString()
+  nearby_keyword?: string;
+
+  @IsOptional()
+  @IsString()
+  nearby_sort?: 'none' | 'distance_asc' | 'distance_desc';
+
+  @IsOptional()
+  @IsString()
   sort?:
     | 'recommended'
     | 'price_asc'
     | 'price_desc'
     | 'rating_desc'
     | 'star_desc'
-    | 'newest';
+    | 'newest'
+    | 'smart';
 }

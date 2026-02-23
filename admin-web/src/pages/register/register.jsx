@@ -3,6 +3,14 @@ import "./register.css";
 import { useNavigate } from "react-router-dom";
 import { register } from "@/api/auth";
 
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 64;
+const PASSWORD_POLICY_TEXT = "密码需8-64位，包含大小写字母、数字和特殊字符";
+const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])\S+$/;
+
+const normalizeEmail = (value) => String(value ?? "").trim().toLowerCase().slice(0, 100);
+const normalizePassword = (value) => String(value ?? "").slice(0, PASSWORD_MAX_LENGTH);
+
 // export default function Register() {
 //   const [form, setForm] = useState({
 //     username: "",
@@ -15,7 +23,8 @@ export default function Register() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("merchant");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("MERCHANT");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -23,8 +32,24 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
-    if (!email || !password) {
+    const nextEmail = normalizeEmail(email);
+    const nextPassword = normalizePassword(password);
+    const nextConfirm = normalizePassword(confirmPassword);
+
+    if (!nextEmail || !nextPassword) {
       setError("请输入邮箱和密码");
+      return;
+    }
+    if (nextPassword.length < PASSWORD_MIN_LENGTH || nextPassword.length > PASSWORD_MAX_LENGTH) {
+      setError(PASSWORD_POLICY_TEXT);
+      return;
+    }
+    if (!PASSWORD_POLICY_REGEX.test(nextPassword)) {
+      setError(PASSWORD_POLICY_TEXT);
+      return;
+    }
+    if (nextPassword !== nextConfirm) {
+      setError("两次输入的密码不一致");
       return;
     }
 
@@ -32,8 +57,8 @@ export default function Register() {
       setLoading(true);
 
       await register({
-        email,
-        password,
+        email: nextEmail,
+        password: nextPassword,
         role,
       });
 
@@ -76,7 +101,9 @@ export default function Register() {
           name="email"
           placeholder="请输入邮箱"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="username"
+          maxLength={100}
+          onChange={(e) => setEmail(normalizeEmail(e.target.value))}
         />
 
         <input
@@ -85,8 +112,23 @@ export default function Register() {
           name="password"
           placeholder="密码"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          autoComplete="new-password"
+          maxLength={PASSWORD_MAX_LENGTH}
+          onChange={(e) => setPassword(normalizePassword(e.target.value))}
         />
+        <input
+          className="input"
+          type="password"
+          name="confirmPassword"
+          placeholder="确认密码"
+          value={confirmPassword}
+          autoComplete="new-password"
+          maxLength={PASSWORD_MAX_LENGTH}
+          onChange={(e) => setConfirmPassword(normalizePassword(e.target.value))}
+        />
+        <div style={{ color: "#667085", marginTop: 8, fontSize: 12 }}>
+          {PASSWORD_POLICY_TEXT}
+        </div>
 
         <div className="role-group">
           <label>
@@ -99,16 +141,9 @@ export default function Register() {
             />
             商户
           </label>
-
-          <label>
-            <input
-              type="radio"
-              name="role"
-              value="ADMIN"
-              onChange={(e) => setRole(e.target.value)}
-            />
-            管理员
-          </label>
+        </div>
+        <div style={{ color: "#667085", marginTop: 8, fontSize: 12 }}>
+          管理员账号请由系统内部创建，不支持公开注册。
         </div>
 
         {error && (

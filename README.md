@@ -1,6 +1,9 @@
-# Easy-Stay Hotel Backend
+# Easy-Stay Hotel
 
-本仓库当前以 **后端 API 服务** 为主（NestJS + Prisma + PostgreSQL）。
+本仓库包含一套完整的酒店预订演示系统（后端 + 用户端 + 商户/管理员后台）：
+- `apps/api`：后端 API（NestJS + Prisma + PostgreSQL）
+- `user-mobile`：用户端（Taro React，当前主要跑 H5）
+- `admin-web`：商户/管理员 PC 后台（React + Vite）
 
 ## 1. 技术栈
 - Node.js + TypeScript
@@ -13,6 +16,8 @@
 - `apps/api/src`：后端业务代码
 - `apps/api/prisma/schema.prisma`：数据库模型定义
 - `apps/api/test/app.e2e-spec.ts`：端到端测试
+- `user-mobile/src`：用户端页面与交互逻辑（搜索、详情、报价、预订、个人中心）
+- `admin-web/src`：商户/管理员后台页面（登录、酒店管理、审核等）
 - `docker-compose.yml`：本地 PostgreSQL 启动配置
 
 ## 3. 环境准备
@@ -68,7 +73,7 @@ pnpm -C apps/api exec dotenv -e .env.test -- prisma db push
 ```
 
 ### 7) （可选）灌入演示数据
-你现在 seed 会生成大量测试数据（约 120 酒店）：
+当前 seed 默认会生成较大规模演示数据（约 `5000` 酒店，可通过环境变量调整）：
 ```bash
 pnpm -C apps/api exec dotenv -e .env.test -- prisma db seed
 ```
@@ -81,6 +86,26 @@ pnpm -C apps/api start:dev
 - `http://localhost:3000`
 - 健康检查：`GET /health`
 
+### 9) 启动用户端（H5）
+```bash
+pnpm -C user-mobile install
+pnpm -C user-mobile dev:h5
+```
+默认地址（以终端输出为准）：
+- `http://localhost:10086`
+
+### 10) 启动商户/管理员后台（PC）
+```bash
+pnpm -C admin-web install
+pnpm -C admin-web dev
+```
+默认地址：
+- `http://localhost:5173`
+
+说明：
+- `admin-web` 登录后根据账号角色进入不同逻辑（`MERCHANT` / `ADMIN`）
+- `user-mobile`、`admin-web`、`apps/api` 建议三端同时运行进行联调
+
 
 ## 5. 常用命令
 ```bash
@@ -92,11 +117,14 @@ pnpm -C apps/api lint
 
 # e2e 测试
 pnpm -C apps/api test:e2e
+
+# 三角色接口自检（merchant/admin/user + booking 主链路 + 前端接口契约审计）
+pnpm -C apps/api self-check:all
 ```
 
 ## 6. 当前后端功能范围
 ### 6.1 认证与角色
-- 商户 / 管理员注册登录
+- 用户 / 商户 / 管理员注册登录（`USER` / `MERCHANT` / `ADMIN`）
 - JWT 鉴权
 - 角色权限控制
 
@@ -233,13 +261,22 @@ erDiagram
 
 ## 8. API 文档（完整）
 
+最新且完整的 API 文档请优先查看：
+
+- `apps/api/API.md`
+
+说明：
+- `apps/api/API.md` 已按当前实现更新（包含 `USER` 角色、附近筛选、人数筛选、Booking 主流程、安全说明）
+- 若本 README 下方内容与代码不一致，请以 `apps/api/API.md` 为准
+
 ### 8.1 通用约定
 - Base URL：`http://localhost:3000`
 - 鉴权：`Authorization: Bearer <access_token>`
 - Content-Type：`application/json`
 - 时间字段：ISO8601（例如 `2026-02-20T00:00:00.000Z`）
 - 日期输入：建议用 `YYYY-MM-DD` 或完整 ISO8601
-- 价格单位：`int`，单位为“分”（例如 `15900` = 159.00）
+- 价格单位（API）：`int`，单位为“分”（例如 `15900` = 159.00）
+- 前端页面展示：通常转换为“元”（如 `¥159`）
 - `open_year`：已升级为日期时间字段（`datetime`），请求体需传日期字符串
 
 ### 8.2 统一错误响应（Nest 默认）
@@ -252,7 +289,7 @@ erDiagram
 ```
 
 ### 8.3 状态枚举
-- `user_role`：`MERCHANT` | `ADMIN`
+- `user_role`：`USER` | `MERCHANT` | `ADMIN`
 - `hotel_status`：`DRAFT` | `PENDING` | `APPROVED` | `REJECTED` | `OFFLINE`
 - `booking_status`：`PENDING` | `CONFIRMED` | `CANCELLED` | `COMPLETED`
 
@@ -691,7 +728,60 @@ Query：`month?`（`YYYY-MM`）
 #### `PATCH /bookings/:id/cancel`
 返回：取消后的 booking 记录（`status=CANCELLED`），并自动回补库存。
 
-## 9. 上传 Git 前检查清单
+## 9. 三端联调（推荐流程）
+
+建议同时启动：
+- 后端：`apps/api`（3000）
+- 用户端：`user-mobile` H5（10086）
+- 后台：`admin-web`（5173）
+
+一轮联调流程（最容易发现协同问题）：
+1. 商户端创建酒店草稿、房型、价格并提交审核
+2. 管理员端在待审核列表中审核通过
+3. 用户端搜索该酒店，进入详情页 / 房型页 / 预订 / 取消订单
+4. 回到后台验证状态、库存、上下线变更是否影响用户端可见性
+
+常见联调问题：
+- 前端写死 `localhost`（真机或云端会失效）
+- 后端未启动导致列表页“加载失败”
+- 日期参数编码未解码（已在当前代码修复）
+- 过去日期仍可预订（后端已强校验拦截）
+
+## 10. 云端互通部署建议（user-app / merchant / admin 共用后端）
+
+推荐目标拓扑：
+- `user-mobile`（H5 或 App）
+- `admin-web`（商户/管理员后台）
+- `apps/api`（云服务器）
+- PostgreSQL（云数据库）
+- （建议）对象存储用于酒店图片
+
+关键原则：
+1. 三端共用同一套云端 API（统一域名，如 `https://api.example.com`）
+2. 前端不要使用 `localhost` 作为 API 地址
+3. 后端生产环境必须配置 HTTPS 与正确的 CORS 白名单
+
+最低上线步骤：
+1. 部署 `apps/api` 到云服务器
+2. 配置云数据库并执行 `prisma migrate deploy`
+3. 部署 `admin-web` 到静态站点/Nginx
+4. 将 `user-mobile` API 基地址切换到云端域名
+5. 验证商户创建 -> 管理员审核 -> 用户预订的完整链路
+
+## 11. 用户端打包为 App（安卓 / iOS）说明
+
+当前 `user-mobile` 为 Taro 项目，日常开发主要使用 `H5`。
+
+可行路径（推荐先落地 H5 容器化方案）：
+- 方案 A（推荐）：`Taro H5 + Capacitor` 打包 Android / iOS 安装包
+- 方案 B：`Taro RN`（改造成本更高）
+
+注意：
+- 真机/App 中 `localhost` 无法访问你电脑上的后端
+- App 联网测试需改为云端域名或局域网 IP（开发阶段）
+- iOS 建议使用 HTTPS（避免 ATS 限制）
+
+## 12. 上传 Git 前检查清单
 建议按顺序执行：
 
 ```bash
@@ -702,15 +792,15 @@ pnpm -C apps/api test:e2e
 
 三项都通过后再提交。
 
-## 10. Postman 使用说明
+## 13. Postman 使用说明
 项目根目录已提供：`postman.json`
 
-### 10.1 导入
+### 13.1 导入
 1. 打开 Postman
 2. `Import` -> 选择仓库根目录的 `postman.json`
 3. 导入后会看到集合：`Easy-Stay Hotel Backend (Full APIs)`
 
-### 10.2 建议执行顺序（从上到下）
+### 13.2 建议执行顺序（从上到下）
 1. `01 Health`
 2. `02 Auth`（先注册再登录，会自动保存 `merchantToken/adminToken`）
 3. `03 Merchant`（会自动保存 `hotelId/roomId/rejectHotelId`）
@@ -718,13 +808,13 @@ pnpm -C apps/api test:e2e
 5. `05 Public Hotels`
 6. `06 Bookings`（会自动保存 `bookingId`）
 
-### 10.3 变量说明（集合变量）
+### 13.3 变量说明（集合变量）
 - `baseUrl`：默认 `http://localhost:3000`
 - `merchantToken` / `adminToken`：登录后自动写入
 - `hotelId` / `roomId` / `rejectHotelId` / `bookingId`：关键请求执行后自动写入
 - `checkIn` / `checkOut`：可手动改为你要测试的日期
 
-### 10.4 常见问题
+### 13.4 常见问题
 1. 401 未授权：先执行对应登录请求，确保 token 已写入变量。  
 2. 404 资源不存在：检查 `hotelId/roomId/bookingId` 是否为空或已失效。  
 3. 400 库存不足：先用管理员接口调整库存后再下单。  

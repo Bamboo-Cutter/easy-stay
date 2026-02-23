@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "cross-env NODE_ENV=test dotenv -e .env.test -- jest --config ./test/jest-e2e.json",
-    "test:e2e:win": "set NODE_ENV=test&& dotenv -e .env.test -- jest --config ./test/jest-e2e.json"
+    "test:e2e:win": "set NODE_ENV=test&& dotenv -e .env.test -- jest --config ./test/jest-e2e.json",
+    "self-check:all": "node scripts/self-check-all.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
