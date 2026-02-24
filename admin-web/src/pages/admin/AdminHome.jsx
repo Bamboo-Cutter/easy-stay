@@ -1,9 +1,4 @@
 
-<<<<<<< Updated upstream
-export default function HomeAdmin() {
-  return <h2>欢迎管理员登录</h2>;
-}
-=======
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/auth/AuthContext.jsx";
@@ -110,4 +105,3 @@ export default function HomeAdmin() {
     </div>
   );
 }
->>>>>>> Stashed changes

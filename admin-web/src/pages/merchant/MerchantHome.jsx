@@ -1,9 +1,4 @@
 
-<<<<<<< Updated upstream
-
-export default function HomeMerchant() {
-  return <h2>欢迎商家登录</h2>;
-=======
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "@/auth/AuthContext.jsx";
@@ -111,5 +106,4 @@ export default function HomeMerchant() {
       </section>
     </div>
   );
->>>>>>> Stashed changes
 }

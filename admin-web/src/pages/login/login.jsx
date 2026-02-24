@@ -2,12 +2,20 @@ import { useState } from "react";
 import "./login.css";
 import { login } from "@/api/auth";
 import { useNavigate } from "react-router-dom";
-import axios from 'axios';
+
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 64;
+const PASSWORD_POLICY_TEXT = "密码需8-64位，包含大小写字母、数字和特殊字符";
+const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])\S+$/;
+
+const normalizeEmail = (value) => String(value ?? "").trim().toLowerCase().slice(0, 100);
+const normalizePassword = (value) => String(value ?? "").slice(0, PASSWORD_MAX_LENGTH);
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
 
@@ -31,32 +39,29 @@ export default function Login() {
 // 点击登录
   const handleLogin = async (e) => {
     e.preventDefault();
-    console.log('1. 表单数据:', { email, password });
-    try {
-      const res = await axios.post('api/auth/login', {
-        email,
-        password
-      });
-      console.log('2. 登录成功:', res.data);
-      
-    } catch (error) {
-      console.error('3. 错误状态:', error.response?.status);      // 401
-      console.error('4. 错误信息:', error.response?.data);        // 后端返回的具体错误
-      console.error('5. 完整错误:', error.message);
-      
-      alert(error.response?.data?.message || '登录失败，请检查用户名密码');
+    setError("");
+    const nextEmail = normalizeEmail(email);
+    const nextPassword = normalizePassword(password);
+
+    if (!nextEmail) {
+      setError("请输入邮箱");
+      return;
+    }
+    if (nextPassword.length < PASSWORD_MIN_LENGTH || nextPassword.length > PASSWORD_MAX_LENGTH) {
+      setError(PASSWORD_POLICY_TEXT);
+      return;
+    }
+    if (!PASSWORD_POLICY_REGEX.test(nextPassword)) {
+      setError(PASSWORD_POLICY_TEXT);
+      return;
     }
 
-    setError("");
-
     try {
-      const res = await axios.post(
-        "/api/auth/login",
-        {
-          email,
-          password,
-        }
-      );
+      setLoading(true);
+      const res = await login({
+        email: nextEmail,
+        password: nextPassword,
+      });
       /*** ① 拿到后端返回的数据* res.data = { access_token: "xxx" }*/
       const token = res.data.access_token;
       /*** ② 保存 token（关键！）* 页面刷新不丢登录态，全靠它*/
@@ -69,7 +74,9 @@ export default function Login() {
       }
       window.location.href = "/";
     } catch (err) {
-      setError("邮箱或密码错误");
+      setError(err?.response?.data?.message || "邮箱或密码错误");
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -82,17 +89,21 @@ export default function Login() {
         type="text"
         placeholder="账号"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
+        autoComplete="username"
+        maxLength={100}
+        onChange={(e) => setEmail(normalizeEmail(e.target.value))}
       />
 
       <input
         type="password"
         placeholder="密码"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        autoComplete="current-password"
+        maxLength={PASSWORD_MAX_LENGTH}
+        onChange={(e) => setPassword(normalizePassword(e.target.value))}
       />
-
-      <button type="submit">登录</button>
+      <div style={{ color: "#667085", fontSize: 12, marginTop: 6 }}>{PASSWORD_POLICY_TEXT}</div>
+      <button type="submit" disabled={loading}>{loading ? "登录中..." : "登录"}</button>
       </form>
       {error && <p style={{ color: "red" }}>{error}</p>}
 

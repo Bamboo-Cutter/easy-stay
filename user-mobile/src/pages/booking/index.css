@@ -1,0 +1,18 @@
+.booking-page { height: 100vh; background:#f5f7fb; display:flex; flex-direction:column; }
+.booking-top { padding: calc(env(safe-area-inset-top) + 14rpx) 18rpx 12rpx; background:#fff; border-bottom:1px solid #eef2f6; display:flex; align-items:center; justify-content:space-between; }
+.booking-top-title { font-size:28rpx; font-weight:700; color:#101828; }
+.booking-scroll { flex:1; padding: 12rpx 18rpx 120rpx; box-sizing:border-box; }
+.card { background:#fff; border:1px solid #edf0f5; border-radius:18rpx; padding:16rpx; margin-bottom:12rpx; }
+.card-title { display:block; font-size:26rpx; font-weight:700; color:#101828; }
+.card-sub { display:block; margin-top:8rpx; font-size:22rpx; color:#667085; }
+.row { margin-top:12rpx; display:flex; justify-content:space-between; gap:8rpx; color:#344054; font-size:22rpx; }
+.inp { width:100%; height:74rpx; border:1px solid #e1e7f0; border-radius:12rpx; background:#f9fbfe; box-sizing:border-box; padding:0 14rpx; margin-top:10rpx; font-size:24rpx; }
+.guest-row { margin-top:14rpx; display:flex; justify-content:space-between; align-items:center; font-size:23rpx; color:#344054; }
+.counter-actions { display:flex; align-items:center; gap:10rpx; }
+.counter-btn { width:48rpx; height:48rpx; border-radius:12rpx; background:#f6f8fb; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; }
+.warn-text { display:block; margin-top:10rpx; color:#b42318; font-size:22rpx; }
+.fixed-bar { position:fixed; left:0; right:0; bottom:0; padding: 12rpx 18rpx calc(env(safe-area-inset-bottom) + 12rpx); background:rgba(255,255,255,.96); border-top:1px solid #eef2f6; display:flex; justify-content:space-between; align-items:center; gap:12rpx; }
+.price { display:block; margin-top:4rpx; color:#f04438; font-size:34rpx; font-weight:800; }
+.submit-btn { width:220rpx; height:78rpx; line-height:78rpx; border-radius:14rpx; background:linear-gradient(90deg,#145dff,#4385ff); color:#fff; font-size:24rpx; font-weight:700; }
+.submit-btn::after { border:none; }
+

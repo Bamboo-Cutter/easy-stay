@@ -1,17 +1,15 @@
-version: "3.8"
-
 services:
-  postgres:
-    image: postgres:15
-    container_name: hotel_postgres
-    ports:
-      - "5432:5432"
+  db:
+    image: postgres:16
+    container_name: easy_stay_db
     environment:
       POSTGRES_USER: hotel
       POSTGRES_PASSWORD: hotel123
       POSTGRES_DB: hotel_booking
+    ports:
+      - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - dbdata:/var/lib/postgresql/data
 
 volumes:
-  pgdata:
+  dbdata:

@@ -12,6 +12,10 @@ export default function MerchantHotelList() {
   const [hotels, setHotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const filteredHotels = hotels.filter(h => h.status === activeTab);
+  const statusCounts = hotels.reduce((acc, item) => {
+    acc[item.status] = (acc[item.status] || 0) + 1;
+    return acc;
+  }, {});
   const status_name ={
     PENDING: '审核中',
     REJECTED: '未通过',
@@ -56,7 +60,7 @@ export default function MerchantHotelList() {
     return `${year}-${month}-${day}`;
   }
 
-  SubmitEvent = async (id, newStatus) => {
+  const handleSubmitStatus = async (id, newStatus) => {
     console.log(newStatus)
     const subResult = {"status": newStatus}
     console.log(subResult)
@@ -77,13 +81,10 @@ export default function MerchantHotelList() {
     }
   }
 
-  if (loading) return <div>加载中...</div>;
+  if (loading) return <div className="list-loading">正在加载我的酒店...</div>;
 
   return (
     <div className="hotel-list">
-<<<<<<< Updated upstream
-      <h2>我的酒店列表</h2>
-=======
       <div className="list-page-head">
         <div>
           <h2>我的酒店列表</h2>
@@ -98,7 +99,6 @@ export default function MerchantHotelList() {
           <div className="summary-chip">草稿 <strong>{statusCounts.DRAFT || 0}</strong></div>
         </div>
       </div>
->>>>>>> Stashed changes
 
       {/* Tab */}
       <div className="tab-bar">
@@ -113,95 +113,97 @@ export default function MerchantHotelList() {
         ))}
       </div>
 
-      <div >
+      <div>
       {filteredHotels.length === 0 ? (
         <div className="empty">暂无数据</div>
       ) : (
         <>
-      {/* 表格 */}
-      <table className="hotel-table">
-        <thead>
-          <tr>
-            <th style={{ width: "18%" }}>酒店名</th>
-            <th style={{ width: "22%" }}>地址</th>
-            <th style={{ width: "10%" }}>城市</th>
-            <th style={{ width: "7%" }}>星级</th>
-            <th style={{ width: "10%" }}>酒店类型</th>
-            <th style={{ width: "10%" }}>开业时间</th>
-            <th style={{ width: "8%" }}>状态</th>
-            <th style={{ width: "15%" }}>{(() => {
-                if (activeTab === "PENDING") return "审核状态";
-                else if (activeTab === "REJECTED") return "理由";
-                else return "操作";
-              })()}</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {filteredHotels.map(hotel => (
-            <tr key={hotel.id}>
-              <td>
-                <strong>{hotel.name_cn}</strong>
-                <div className="hotel-en">{hotel.name_en}</div>
-                <span
-                  className="detail-link"
-                  // 点击重定向页面
-                  onClick={
-                    //navigate(`/hotel-detail/${hotel.id}/edit`);
-                    //(activeTab === "REJECTED" || activeTab === "DRAFT") ? window.open(`/hotel-detail/${hotel.id}/edit`, '_blank') : window.open(`/hotel-detail/${hotel.id}`, '_blank');
-                    // () => {
-                    //   (activeTab === "PENDING")? window.open(`/hotel-detail/${hotel.id}`, '_blank') : window.open(`/hotel-detail/${hotel.id}/edit?operation=edit`, '_blank');
-                    // }
-                    () => {
-                      if (activeTab === "PENDING") navigate(`/hotel-detail/${hotel.id}`);
-                      else if (activeTab === "APPROVED") navigate(`/hotel-detail/${hotel.id}/edit?operation=online`);
-                      else if (activeTab === "REJECTED") navigate(`/hotel-detail/${hotel.id}/edit`);
-                      else return navigate(`/hotel-detail/${hotel.id}/edit?operation=wpend`);
-                    }
-                  }
-                >
+      <div className="table-shell">
+        <div className="table-scroll">
+          <table className="hotel-table">
+            <thead>
+              <tr>
+                <th style={{ width: "18%" }}>酒店名</th>
+                <th style={{ width: "22%" }}>地址</th>
+                <th style={{ width: "10%" }}>城市</th>
+                <th style={{ width: "7%" }}>星级</th>
+                <th style={{ width: "10%" }}>酒店类型</th>
+                <th style={{ width: "10%" }}>开业时间</th>
+                <th style={{ width: "8%" }}>状态</th>
+                <th style={{ width: "15%" }}>
                   {(() => {
-                      if (activeTab === "PENDING") return "酒店详情";
-                      else if (activeTab === "APPROVED") return "酒店详情/修改";
-                      else if (activeTab === "REJECTED") return "修改";
-                      else return "修改/上传审核";
-                    })()
-                  }
-                </span>
-              </td>
-              <td>{hotel.address}</td>
-              <td>{hotel.city}</td>
-              <td>{hotel.star}</td>
-              <td>{hotel.type}</td>
-              <td>{formatDate(hotel.open_year)}</td>
-              <td>
-                <span className={`status ${hotel.status}`}>
-                  {status_name[hotel.status]}
-                </span>
-              </td>
+                    if (activeTab === "PENDING") return "审核状态";
+                    if (activeTab === "REJECTED") return "理由";
+                    return "操作";
+                  })()}
+                </th>
+              </tr>
+            </thead>
 
-              {/* 最后一列区分 */}
-              <td>
-                {(() => {
-                    if (activeTab === "PENDING") return(<span style={{ color: "#999" }}> 等待审核</span>);
-                    else if (activeTab === "REJECTED") return(
-                    <span style={{ color: "#ff4d4f" }}>
-                        {hotel.reject_reason || "—"}
-                      </span>);
-                    else return(
-                      <span style={{ color: "#4396eeff" }}
+            <tbody>
+              {filteredHotels.map(hotel => (
+                <tr key={hotel.id}>
+                  <td>
+                    <div className="hotel-main-name">{hotel.name_cn}</div>
+                    <div className="hotel-en">{hotel.name_en}</div>
+                    <span
+                      className="detail-link"
                       onClick={() => {
-                          (activeTab === "APPROVED")? SubmitEvent(hotel.id, "OFFLINE") : SubmitEvent(hotel.id, "PENDING");
-                        }}>
-                        {(activeTab === "APPROVED") ? "下线" : "上传审核"}
-                      </span>);
-                  })()
-                }
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                        if (activeTab === "PENDING") navigate(`/hotel-detail/${hotel.id}`);
+                        else if (activeTab === "APPROVED") navigate(`/hotel-detail/${hotel.id}/edit?operation=online`);
+                        else if (activeTab === "REJECTED") navigate(`/hotel-detail/${hotel.id}/edit`);
+                        else return navigate(`/hotel-detail/${hotel.id}/edit?operation=wpend`);
+                      }}
+                    >
+                      {(() => {
+                        if (activeTab === "PENDING") return "酒店详情";
+                        if (activeTab === "APPROVED") return "酒店详情/修改";
+                        if (activeTab === "REJECTED") return "修改";
+                        return "修改/上传审核";
+                      })()}
+                    </span>
+                  </td>
+                  <td className="cell-multi-line">{hotel.address}</td>
+                  <td className="cell-muted">{hotel.city}</td>
+                  <td className="cell-muted">{hotel.star ?? "-"}</td>
+                  <td className="cell-muted">{hotel.type || "-"}</td>
+                  <td className="cell-muted">{formatDate(hotel.open_year)}</td>
+                  <td>
+                    <span className={`status ${hotel.status}`}>
+                      {status_name[hotel.status]}
+                    </span>
+                  </td>
+
+                  <td>
+                    {(() => {
+                      if (activeTab === "PENDING")
+                        return <span className="cell-muted">等待审核</span>;
+                      if (activeTab === "REJECTED")
+                        return (
+                          <span className="danger-text">
+                            {hotel.reject_reason || "—"}
+                          </span>
+                        );
+                      return (
+                        <span
+                          className="list-action-link"
+                          onClick={() => {
+                            activeTab === "APPROVED"
+                              ? handleSubmitStatus(hotel.id, "OFFLINE")
+                              : handleSubmitStatus(hotel.id, "PENDING");
+                          }}
+                        >
+                          {activeTab === "APPROVED" ? "下线" : "上传审核"}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
       </>
       )}
       </div>
