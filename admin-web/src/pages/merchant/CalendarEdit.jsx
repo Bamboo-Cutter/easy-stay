@@ -161,10 +161,10 @@ export default function CalendarEdit() {
                 <input
                   className="ce-input"
                   type="number"
-                  value={price || ""}
+                  value={price/100 || ""}
                   placeholder="暂无价格"
                   onChange={(e) =>
-                    handlePriceChange(dateKey, Number(e.target.value))
+                    handlePriceChange(dateKey, Number(e.target.value*100))
                   }
                 />
               </div>

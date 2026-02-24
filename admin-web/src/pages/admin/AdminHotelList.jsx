@@ -1,4 +1,4 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext, useEffect} from "react";
 import { useNavigate } from "react-router-dom"
 import "../merchant/HotelList.css";
 import { AuthContext } from "@/auth/AuthContext.jsx";
@@ -10,7 +10,6 @@ export default function AdminHotelList() {
   const { user } = useContext(AuthContext);
   const merchantId = user?.sub;
   const [hotels, setHotels] = useState([]);
-  const [loading, setLoading] = useState(true);
   const status_name ={
     PENDING: '待审核',
     REJECTED: '未通过',
@@ -18,14 +17,14 @@ export default function AdminHotelList() {
     OFFLINE: '已下线',
     DRAFT: '草稿',
   }
-
-  
+  const [loading, setLoading] = useState(true);
+ 
   useEffect(() => {
     if (!merchantId) return;
-    const fetchHotels = async () => {
+    const fetchHotels = async (page = 1) => {
       try {
         const token = localStorage.getItem('token'); 
-        const res = await axios.get(`/api/admin/hotels`, {
+        const res = await axios.get(`/api/admin/hotels?page=${page}&limit=20`, {
             //params: { merchant_id: merchantId },
             headers: {
               Authorization: `Bearer ${token}`,
@@ -44,6 +43,7 @@ export default function AdminHotelList() {
 
   const filteredHotels = hotels.filter(h => h.status === activeTab);
 
+<<<<<<< Updated upstream
   //需要的接口是：PUT /api/hotels/:id/status   body: { status: "PENDING" }
   // const handleStatusChange = async (id, newStatus) => {
   //   try {
@@ -71,6 +71,9 @@ export default function AdminHotelList() {
   // };
 
   if (loading) return <div>加载中...</div>;
+=======
+  if (loading) return <div className="list-loading">正在加载酒店列表...</div>;
+>>>>>>> Stashed changes
 
   return (
     <div className="hotel-list">
@@ -93,6 +96,7 @@ export default function AdminHotelList() {
         <div className="empty">暂无数据</div>
       ) : (
         <>
+<<<<<<< Updated upstream
       {/* 表格 */}
       <table className="hotel-table">
         <thead>
@@ -107,6 +111,23 @@ export default function AdminHotelList() {
             <th style={{ width: "15%" }}>操作</th>
           </tr>
         </thead>
+=======
+      <div className="table-shell">
+        <div className="table-scroll" >   
+          <table className="hotel-table">
+            <thead>
+              <tr>
+                <th style={{ width: "18%" }}>酒店名</th>
+                <th style={{ width: "22%" }}>地址</th>
+                <th style={{ width: "10%" }}>城市</th>
+                <th style={{ width: "7%" }}>星级</th>
+                <th style={{ width: "10%" }}>酒店类型</th>
+                <th style={{ width: "10%" }}>开业时间</th>
+                <th style={{ width: "8%" }}>状态</th>
+                <th style={{ width: "15%" }}>操作</th>
+              </tr>
+            </thead>
+>>>>>>> Stashed changes
 
         <tbody>
           {filteredHotels.map(hotel => (

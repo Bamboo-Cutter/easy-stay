@@ -24,6 +24,22 @@
 .tab-item.active {
   background: #1677ff;
   color: #fff;
+<<<<<<< Updated upstream
+=======
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.2);
+}
+
+.table-shell {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.table-scroll {
+  /* height: 600px; */
+  overflow: auto;
+>>>>>>> Stashed changes
 }
 
 /* 酒店列表 */

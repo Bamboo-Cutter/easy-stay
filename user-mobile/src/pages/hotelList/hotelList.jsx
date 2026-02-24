@@ -95,7 +95,37 @@ export default function HotelList() {
     ? dayjs(checkOut).diff(dayjs(checkIn), 'day')
     : 0
 
+<<<<<<< Updated upstream
     /* ========= 构造查询参数 ========= */
+=======
+  // const daysInMonth = dayjs(`${currentYear}-${currentMonth + 1}-01`).daysInMonth()
+  // const dateList = Array.from({ length: daysInMonth }).map((_, i) =>
+  //   dayjs(`${currentYear}-${currentMonth + 1}-${i + 1}`).format('YYYY-MM-DD')
+  // )
+  const generateDateList = (year, month) => {
+    const firstDayOfMonth = dayjs().year(year).month(month).date(1);
+    const daysInMonth = firstDayOfMonth.daysInMonth();
+    const firstDayWeekday = firstDayOfMonth.day(); 
+    const cells = [];
+    for (let i = 0; i < firstDayWeekday; i++) {
+      cells.push(""); 
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      const fullDate = firstDayOfMonth.date(i).format('YYYY-MM-DD');
+      cells.push(fullDate);
+    }
+    while (cells.length < 42) {
+      cells.push("");
+    }
+    return cells;
+  };
+  const dateList = generateDateList(currentYear, currentMonth);
+
+  const weekMap = ['日', '一', '二', '三', '四', '五', '六']
+  const todayDate = dayjs().startOf('day')
+  const nights = Math.max(dayjs(checkOut).diff(dayjs(checkIn), 'day'), 1)
+  const guestSummary = `${roomsCount}间房 · ${adultCount}位住客`
+>>>>>>> Stashed changes
 
     const buildQuery = () => {
     const query = {
@@ -380,6 +410,7 @@ export default function HotelList() {
               </View>
             </View>
 
+<<<<<<< Updated upstream
            <View className='calendar-grid'>
             {dateList.map((date, index) => {
               const onlyCheckInSelected = tempCheckIn && !tempCheckOut
@@ -393,6 +424,27 @@ export default function HotelList() {
                 tempCheckOut &&
                 dayjs(date).isAfter(dayjs(tempCheckIn), 'day') &&
                 dayjs(date).isBefore(dayjs(tempCheckOut), 'day')
+=======
+            <View className='calendar-grid'>
+              {['日', '一', '二', '三', '四', '五', '六'].map(week => (
+                <View key={week} className='calendar-weekday'>
+                  {week}
+                </View>
+              ))}
+            </View>
+            <View className='calendar-grid'>
+              {dateList.map((date, idx) => {
+                if (!date) return <View key={`blank-${idx}`} className='sheet-day blank' />;
+                const onlyCheckInSelected = tempCheckIn && !tempCheckOut
+                const isPast = dayjs(date).isBefore(todayDate, 'day')
+                const isDisabled = isPast || (onlyCheckInSelected && dayjs(date).isBefore(dayjs(tempCheckIn), 'day'))
+                const isSelected = date === tempCheckIn || date === tempCheckOut
+                const isInRange =
+                  tempCheckIn &&
+                  tempCheckOut &&
+                  dayjs(date).isAfter(dayjs(tempCheckIn), 'day') &&
+                  dayjs(date).isBefore(dayjs(tempCheckOut), 'day')
+>>>>>>> Stashed changes
 
 
               return (

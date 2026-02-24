@@ -15,27 +15,21 @@ export default function MerchantHotelAdd() {
     address: "",
     city: "",
     type: "",
-    star: "3",
+    star: "2",
     open_year: "",
     status: "DRAFT",
     merchant_id: merchantId,
     reject_reason: null,
     hotel_tags: [
       {
-          //"id": hotelId+"tag"+Date.now(),
-          //"hotel_id": hotelId,
           "tag": ""
       }],
     hotel_images: [{
-      //"id": hotelId+"img"+Date.now(),
-      //"hotel_id": hotelId,
       "url": "",
       "sort": null
     }],
     rooms: [
       {
-          //"id": hotelId+"room"+Date.now(),
-          //"hotel_id": hotelId,
           "name": "",
           "max_occupancy": "",
           "total_rooms": "",
@@ -45,8 +39,6 @@ export default function MerchantHotelAdd() {
       }],
     nearby_points: [
       {
-          //"id": hotelId+"nearby"+Date.now(),
-          //"hotel_id": hotelId,
           "type": "",
           "name": "",
           "distance_km": null
@@ -118,7 +110,7 @@ export default function MerchantHotelAdd() {
       return;
     }
 
-    // ✅ 构造干净 DTO
+    // 构造干净 DTO
     const submitData = {
       name_cn: hotel.name_cn,
       name_en: hotel.name_en,
@@ -152,7 +144,7 @@ export default function MerchantHotelAdd() {
           name: room.name.trim(),
           max_occupancy: parseInt(room.max_occupancy, 10),
           total_rooms: parseInt(room.total_rooms, 10),
-          base_price: parseInt(room.base_price, 10) || 0,
+          base_price: parseInt(room.base_price*100, 10) || 0,
           refundable: !!room.refundable,
           breakfast: !!room.breakfast
         })),
@@ -281,13 +273,14 @@ export default function MerchantHotelAdd() {
             name="type"
             value={hotel.type}
             onChange={handleChange}
-            placeholder="如：Business / Resort"
+            placeholder="如：商务型 / 度假型"
           />
         </div>
 
         <div className="form-item">
           <label>酒店星级</label>
           <select name="star" value={hotel.star} onChange={handleChange}>
+            <option value="2">经济</option>
             <option value="3">三星</option>
             <option value="4">四星</option>
             <option value="5">五星</option>
@@ -379,21 +372,21 @@ export default function MerchantHotelAdd() {
                       placeholder="房型"
                     />
                     <br />
-                    房间最大容量：
+                    房型可居住最大人数：
                     <input
                       value={room.max_occupancy || ""}
                       onChange={(e) => handleArrayChange("rooms", index, "max_occupancy", e.target.value)}
-                      placeholder="房间最大容量"
+                      placeholder="房间可居住最大人数"
                     />
                     <br />
-                    房间总数量：
+                    房型总数量：
                     <input
                       value={room.total_rooms || ""}
                       onChange={(e) => handleArrayChange("rooms", index, "total_rooms", e.target.value)}
                       placeholder="房间数量"
                     />
                     <br />
-                    房间基础价格：
+                    房型基础价格（元）：
                     <input
                       value={room.base_price || ""}
                       onChange={(e) => handleArrayChange("rooms", index, "base_price", e.target.value)}
@@ -452,7 +445,7 @@ export default function MerchantHotelAdd() {
                       placeholder="类型"
                     />
                     <br />
-                    距离：
+                    距离（km）：
                     <input
                       value={point.distance_km || ""}
                       onChange={(e) => handleArrayChange("nearby_points", index, "distance_km", e.target.value)}

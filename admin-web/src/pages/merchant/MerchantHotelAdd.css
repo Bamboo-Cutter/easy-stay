@@ -29,10 +29,11 @@
 .form-item input,
 .form-item select {
   height: 36px;
-  padding: 3 10px;
+  padding: 3px 10px;
   border: 1px solid #dcdcdc;
   border-radius: 4px;
-  margin: 4px
+  margin: 4px;
+  font-size: 15px;
 }
 
 /* 酒店标签输入框和删除按钮 */

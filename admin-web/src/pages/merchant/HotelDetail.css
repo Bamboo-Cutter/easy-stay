@@ -1,209 +1,407 @@
+/* 基础变量与重置 */
+:root {
+  --primary-color: #2563eb;
+  --secondary-color: #1677ff;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --bg-color: #f8fafc;
+  --card-bg: #ffffff;
+  --border-color: #e2e8f0;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
 .hotel-detail {
   max-width: 1100px;
   margin: 40px auto;
-  padding: 32px;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  padding: 20px;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
 }
 
+/* 头部样式 */
 .hotel-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+  border-left: 6px solid var(--primary-color);
 }
 
-.hotel-title h1 {
-  margin: 0;
+.hotel-title h1{
+  margin: 0 0 8px 0;
   font-size: 28px;
-}
-
-.hotel-title span {
-  color: #888;
-  font-size: 14px;
+  color: var(--text-main);
 }
 
 .hotel-title h2 {
-  margin-bottom: 12px;
-  font-size: 20px;
-  border-bottom: 2px solid #eee;
-  padding-bottom: 4px;
+  margin: 15px 0 8px 0;
+  font-size: 28px;
+  color: var(--text-main);
 }
 
-.hotel-title input {
-  width: 300px;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.hotel-title input{
+    width: 100%;
+}
+
+.hotel-title span {
+  color: var(--text-muted);
   font-size: 16px;
 }
 
-.hotel-info {
-  margin-top: 24px;
+
+/* --- 基础信息大容器 --- */
+.hotel-base-info-container {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.info-item {
-  background: #f7f9fb;
-  padding: 16px;
+  grid-template-columns: repeat(2, 1fr); /* 商务双列布局 */
+  gap: 24px;
+  background: #ffffff;
+  padding: 32px;
   border-radius: 12px;
-  font-size: 16px;
-  font-weight: 400;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f0f2f5;
+  margin-bottom: 24px;
 }
 
-.info-item > input{
-  width: 60%;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 12px;
+/* --- 通用字段组样式 --- */
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #fafafa; /* 淡淡的底色提升品质感 */
+  border-left: 4px solid transparent;
+  transition: all 0.2s ease;
 }
 
-/* 添加按钮 */
-.info-item > button {
-  padding: 6px 12px;
+.field-group:hover {
+  background-color: #f5f7fa;
+}
+
+/* 字段标题 (Label) */
+.field-group label, 
+.field-group span:first-child {
+  font-size: 20px;
+  color: #8c8c8c;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* 字段显示内容 (Text) */
+.field-group .field-value {
+  font-size: 18px;
+  color: #262626;
+  min-height: 24px;
+}
+
+/* --- 特定字段定制 --- */
+/* 地址字段：通常较长，可以跨列或加深边框 */
+.address-field {
+  grid-column: span 2; /* 地址占满整行 */
+  border-left-color: #1890ff; 
+}
+
+/* 星级字段：增加一个星星的视觉暗示感 */
+.star-field {
+  border-left-color: #faad14;
+}
+
+/* 城市与类型 */
+.city-field, .type-field {
+  border-left-color: #52c41a;
+}
+
+/* 开业时间 */
+.date-field {
+  border-left-color: #722ed1;
+}
+
+/* 标签字段：流式布局 */
+/* .tags-field {
+  grid-column: span 2;
+  background-color: #ffffff;
+  border: 1px dashed #d9d9d9;
+} */
+
+/* --- 输入控件美化 (编辑模式) --- */
+.hotel-title input
+.field-group input, 
+.field-group select {
+  width: 100%;
+  /* height: 30px; */
+  padding: 10px 14px;
+  font-size: 18px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background-color: #fff;
+  transition: all 0.3s;
+}
+
+.field-group input:focus, 
+.field-group select:focus {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+  outline: none;
+}
+
+/* --- 酒店标签父容器 --- */
+.hotel-tags-container {
+  grid-column: span 2; /* 跨两列显示，占据整行 */
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 16px;
   margin-top: 8px;
-  background-color: #1890ff;
-  color: white;
-  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 标签容器的标题 */
+.tags-title {
+  font-size: 20px;
+  color: #8c8c8c;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 标签包裹层（处理流式布局） */
+.tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* 展示态下的标签样式优化 */
+.tag-badge-display {
+  background: #f0f5ff;
+  color: #2f54eb;
+  border: 1px solid #adc6ff;
+  padding: 4px 12px;
+  border-radius: 4px; /* 商务风格常用小圆角而非全圆角 */
+  font-size: 18px;
+}
+
+/* 编辑态下的标签输入框美化 */
+.tag-badge-edit {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  padding: 2px 8px;
   border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.tag-badge-edit:focus-within {
+  border-color: #40a9ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.tag-input-inner {
+  border: none !important;
+  background: transparent !important;
+  width: 150px !important;
+  padding: 4px 0 !important;
+  font-size: 18px !important;
+  outline: none !important;
+}
+
+/* --- 酒店标签 (Badge) 样式 --- */
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 18px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+}
+
+/* 标签编辑模式下的删除按钮 */
+.tag-delete-btn {
+  background: transparent;
+  color: #ff4d4f;
+  border: none;
+  padding: 0 4px;
+  margin-left: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.tag-delete-btn:hover {
+  color: #cf1322;
+}
+
+/* “添加标签”按钮 */
+.tag-add-btn {
+  background: #ffffff;
+  color: #595959;
+  border: 1px dashed #d9d9d9;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 15px;
   cursor: pointer;
 }
 
-/* 酒店标签输入框和删除按钮 */
-.info-item span input {
-  width: 120px;
-  margin-right: 4px;
-  margin-bottom: 4px;
-  padding: 4px 6px;
-  border: 1px solid #999;
-  border-radius: 4px;
-  font-size: 14px;
+.tag-add-btn:hover {
+  border-color: #1890ff;
+  color: #1890ff;
 }
 
-.info-item span button {
-  padding: 2px 6px;
-  font-size: 12px;
-  background-color: #ff4d4f;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.info-item span button:hover {
-  background-color: #d9363e;
+/* 响应式：在窄屏下改为单列 */
+@media (max-width: 768px) {
+  .hotel-base-info-container {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+  .address-field, .tags-field {
+    grid-column: span 1;
+  }
 }
 
 
-/* 酒店图片 */
+/* 图片展示 */
 .images-grid-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px; /* 图片间距 */
-  padding: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .image-wrapper {
-  overflow: hidden;
   position: relative;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.image-wrapper:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  padding: 5px;
 }
 
 .hotel-image {
   width: 100%;
-  height: 140px; /* 固定高度，也可以改为 auto 让比例自适应 */
+  height: 100%;
   object-fit: cover;
-  display: block;
+  border: 1px solid var(--border-color);
 }
 
-/* 图片编辑输入框 */
-.image-wrapper input {
-  width: calc(95% - 40px);
-  padding: 6px 8px;
-  margin: 6px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+
+/* 信息网格 */
+.hotel-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  background: var(--card-bg);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
 }
 
-.image-wrapper button {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  padding: 4px 8px;
-  background-color: #ff4d4f;
-  border: none;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
+.info-item {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 18px;
+  color: var(--text-main);
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.image-wrapper button:hover {
-  background-color: #d9363e;
 }
 
 
-
+/* 容器板块 */
 .rooms {
-  margin-top: 40px;
+  background: var(--card-bg);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
 }
-/* 房间和数组卡片 */
+
 .rooms h2 {
-  margin-bottom: 12px;
   font-size: 20px;
-  border-bottom: 2px solid #eee;
-  padding-bottom: 4px;
-}
-/* 添加按钮 */
-.rooms > button {
-  padding: 6px 12px;
-  margin-top: 8px;
-  background-color: #1890ff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.rooms > button:hover {
-  background-color: #096dd9;
-}
-
-.room-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 30px;
-  border: 1px solid #eee;
-  padding: 20px;
+  margin-top: 0;
   margin-bottom: 20px;
-  border-radius: 8px;
-  background: #fafafa;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border-color);
+  color: var(--primary-color);
 }
 
-/* 左侧信息盒子 */
-.room-info-box {
-  flex: 1;
-  min-width: 250px;
+/* 卡片样式 */
+.room-card, .nearby-card {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  position: relative;  
+}
+.room-card button,
+.nearby-card button{
+    position: absolute;    /* 关键：脱离文档流 */
+    top: 15px;             /* 距离顶部 */
+    right: 15px;           /* 距离右侧 */
+    height: 40px;
+    background-color: red;
+}
+
+.nearby-card{
+    display: grid;
+    grid-template-columns: 50% 30% 20%;
+}
+
+.room-card:hover, .nearby-card:hover {
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+.room-info-box{
+    flex: 1;
+    margin-left: 15px;
+    margin-right: 30px;
 }
 
 .room-info-box div {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  font-size: 18px;
 }
+
+/* 房型标题专属样式 */
+.room-type-title {
+  font-size: 20px;          /* 较大的字号 */
+  font-weight: 700;         /* 加粗 */
+  color: #1a3353;           /* 深蓝商务色 */
+  margin-bottom: 16px;      /* 与下方内容的间距 */
+  padding-bottom: 8px;
+  border-bottom: 2px solid #f0f2f5; /* 下划线分割 */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 装饰性的小色块，增加工整感 */
+.room-type-title::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  background-color: #2563eb; /* 品牌主色蓝色 */
+  border-radius: 2px;
+}
+
+
 
 /* 右侧日历盒子 */
 .room-calendar-box {
@@ -237,7 +435,11 @@
 }
 
 .calendar-edit-btn {
-  background: #1677ff;
+    /* position: absolute;    */
+  /* top: 15px;        
+  right: 15px;     */
+  position: static !important;
+  background-color: #1677ff !important;
   color: white;
   border: none;
   padding: 4px 12px;
@@ -266,6 +468,7 @@
   padding: 4px 10px;
   border-radius: 6px;
   cursor: pointer;
+  color: #000000;
 }
 
 .calendar-header button:hover {
@@ -324,87 +527,94 @@
 }
 
 
-
-/* 附近情况卡片 */
-.nearby-card {
-  padding: 16px;
-  border-radius: 12px;
-  background: #fafafa;
-  margin-bottom: 16px;
-  border: 1px solid #eee;
-  position: relative;
+/* 表单元素美化 */
+input, select {
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 18px;
+  margin: 5px 0;
+  outline: none;
+  transition: border-color 0.2s;
 }
 
-/* 房间卡片输入框 */
-.nearby-card input, .nearby-card select {
-  width: calc(50% - 12px);
-  margin: 6px 6px 6px 0;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  font-size: 14px;
+input:focus, select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-/* 删除按钮 */
-.nearby-card button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background-color: #ff4d4f;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 8px;
+button {
   cursor: pointer;
-  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  background: var(--primary-color);
+  color: white;
+  margin: 4px;
 }
 
-.nearby-card button:hover {
-  background-color: #d9363e;
+button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
+.calendar-edit-btn {
+  background: var(--secondary-color);
+}
 
-
-/* 浮动右下角按钮 */
+/* 浮动按钮组 */
 .fixed-edit-button {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 30px;
+  right: 30px;
+  display: flex;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 15px;
+  border-radius: 50px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(8px);
   z-index: 1000;
 }
 
 .fixed-edit-button button {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-left: 8px;
-}
-
-.fixed-edit-button button:first-child {
-  background-color: #52c41a; /* 保存 */
-  color: white;
-}
-
-.fixed-edit-button button:first-child:hover {
-  background-color: #389e0d;
+  padding: 12px 24px;
+  border-radius: 25px;
 }
 
 .fixed-edit-button button:last-child {
-  background-color: #ff4d4f; /* 取消 */
+  background: var(--primary-color);
+}
+
+/* 状态颜色区分 */
+button[onClick*="handleSaveDraft"] {
+  background: var(--secondary-color);
+}
+
+button[onClick*="handleArrayDelete"] {
+  background: #fee2e2;
+  color: var(--danger-color);
+}
+
+button[onClick*="handleArrayDelete"]:hover {
+  background: var(--danger-color);
   color: white;
 }
 
-.fixed-edit-button button:last-child:hover {
-  background-color: #d9363e;
-}
-
-.fixed-edit-button button.edit-mode {
-  background-color: #1890ff; /* 编辑 */
-  color: white;
-}
-
-.fixed-edit-button button.edit-mode:hover {
-  background-color: #096dd9;
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .hotel-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .fixed-edit-button {
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    justify-content: center;
+    border-radius: 12px;
+  }
 }

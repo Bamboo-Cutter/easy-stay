@@ -71,7 +71,7 @@ function PriceCalendar({ priceCalendar, roomId }) {
 
               {price && (
                 <div className="calendar-price">
-                  ¥{price}
+                  ¥{price/100}
                 </div>
               )}
             </div>
@@ -320,22 +320,57 @@ export default function HotelDetailEdit() {
         </div>
       </div>
 
-      <div className="hotel-info">
-        {["address", "star", "city", "type"].map((field) => (
-          <div className="info-item" key={field}>
-            {key_name[field]}：
-            {isEditing ? (
-              <input
-                value={editableHotel[field] || ""}
-                onChange={(e) => handleChange(field, e.target.value)}
-              />
-            ) : (
-              showValue(hotel[field])
-            )}
-          </div>
-        ))}
-        <div className="info-item" >
-            📅 开业时间：
+      <div className="hotel-base-info-container">
+        <div className="field-group address-field" >
+          <span>{key_name["address"]}：</span>
+          {isEditing ? (
+            <input
+              value={editableHotel["address"] || ""}
+              onChange={(e) => handleChange(field, e.target.value)}
+            />
+          ) : (
+            <div className="field-value">{showValue(hotel["address"])}</div>
+          )}
+        </div>
+        <div className="field-group star-field" >
+          <span>{key_name["star"]}：</span>
+          {isEditing ? (
+            <select name="star" 
+              value={editableHotel["star"] || ""} 
+              onChange={(e) => handleChange("star", e.target.value)} >
+              <option value="2">经济</option>
+              <option value="3">三星</option>
+              <option value="4">四星</option>
+              <option value="5">五星</option>
+            </select>
+          ) : (
+            <div className="field-value">{showValue(hotel["star"])}星</div>
+          )}
+        </div>
+        <div className="field-group city-field">
+          <span>{key_name["city"]}：</span>
+          {isEditing ? (
+            <input
+              value={editableHotel["city"] || ""}
+              onChange={(e) => handleChange("city", e.target.value)}
+            />
+          ) : (
+            <div className="field-value-text">{showValue(hotel["city"])}</div>
+          )}
+        </div>
+        <div className="field-group type-field">
+          <span>{key_name["type"]}：</span>
+          {isEditing ? (
+            <input
+              value={editableHotel["type"] || ""}
+              onChange={(e) => handleChange("type", e.target.value)}
+            />
+          ) : (
+            <div className="field-value-text">{showValue(hotel["type"])}</div>
+          )}
+        </div>
+        <div className="field-group date-field" >
+          <span>{key_name["open_year"]}：</span>
             {isEditing ? (
               <input
                 type="date"
@@ -343,44 +378,42 @@ export default function HotelDetailEdit() {
                 onChange={(e) => handleChange("open_year", e.target.value)}
               />
             ) : (
-              showValue(formatDate(hotel.open_year))
+              <div className="field-value-text">{showValue(formatDate(hotel.open_year))}</div>
             )}
           </div>
-
-        {isEditing ? (<br />) : null}
-
-        <div className="info-item">
-          酒店标签：
-          {isEditing ? (
-            <>
-              {editableHotel.hotel_tags.map((tag, index) => (
-                <span key={tag.id} style={{ marginRight: 8 }}>
-                  <input
-                    value={tag.tag || ""}
-                    onChange={(e) => handleArrayChange("hotel_tags", index, "tag", e.target.value)}
-                  />
-                  <button onClick={() => handleArrayDelete("hotel_tags", index)}>删除</button>
-                  <br />
-                </span>
-              ))}
-              <button
-                onClick={() =>
-                  handleArrayAdd("hotel_tags", { tag: "" })
-                }
-              >
-                添加标签
-              </button>
-            </>
-          ) : (
-            hotel.hotel_tags.map((tag, index) => (
-              <span key={tag.id} style={{ marginRight: 8 }}>
-                {showValue(tag.tag)}
-              </span>
-            ))
-          )}
-        </div>
       </div>
 
+    <div className="hotel-tags-container">
+      <div className="tags-title">🏷️ 酒店标签</div>
+      <div className="tags-wrapper">
+        {/* 展示态 */}
+        {!isEditing && hotel.hotel_tags.map((tag) => (
+          <span key={tag.id} className="tag-badge-display">
+            {tag.tag}
+          </span>
+        ))}
+
+        {/* 编辑态 */}
+        {isEditing && (
+          <>
+            {editableHotel.hotel_tags.map((tag, index) => (
+              <span key={tag.id} className="tag-badge-edit">
+                <input 
+                  className="tag-input-inner"
+                  value={tag.tag} 
+                  onChange={(e) => handleArrayChange("hotel_tags", index, "tag", e.target.value)} 
+                  placeholder="输入标签"
+                />
+                <button className="tag-delete-btn" onClick={() => handleArrayDelete("hotel_tags", index)}>×</button>
+              </span>
+            ))}
+            <button className="tag-add-btn" onClick={() => handleArrayAdd("hotel_tags", { tag: "" })}>
+              + 添加新标签
+            </button>
+          </>
+        )}
+      </div>
+    </div>
 
     {/* 图片展示 */}
     <div className="rooms">
@@ -445,7 +478,7 @@ export default function HotelDetailEdit() {
         {isEditing ? ( <>
         {editableHotel.rooms.map((room, index) => (
           
-          <div className="nearby-card" key={room.id}>
+          <div className="room-card" key={room.id}>
             <div style={{ width: '90%' }}>
               房间类型：
               <input
@@ -454,24 +487,24 @@ export default function HotelDetailEdit() {
                 placeholder="房型"
               />
               <br />
-              房间容量：
+              房型可居住总人数：
               <input
                 value={room.max_occupancy || ""}
                 onChange={(e) => handleArrayChange("rooms", index, "max_occupancy", e.target.value)}
-                placeholder="最大容量"
+                placeholder="最大居住人数"
               />
               <br />
-              房间总数量：
+              房型总数量：
               <input
                 value={room.total_rooms || ""}
                 onChange={(e) => handleArrayChange("rooms", index, "total_rooms", e.target.value)}
                 placeholder="房间总数量"
               />
               <br />
-              房间基础价格：
+              房型基础价格（元）：
               <input
-                value={room.base_price || ""}
-                onChange={(e) => handleArrayChange("rooms", index, "base_price", e.target.value)}
+                value={room.base_price/100 || ""}
+                onChange={(e) => handleArrayChange("rooms", index, "base_price", e.target.value*100)}
                 placeholder="基础价格"
               />
               <br />
@@ -494,8 +527,8 @@ export default function HotelDetailEdit() {
                 <option value="是">是</option>
                 <option value="否">否</option>
               </select>
-              <button onClick={() => handleArrayDelete("rooms", index)}>删除</button>
             </div>
+            <button onClick={() => handleArrayDelete("rooms", index)}>删除</button>
           </div> 
             ))}
           <button
@@ -509,10 +542,10 @@ export default function HotelDetailEdit() {
               ? hotel.rooms.map((room, index) => (
                   <div className="room-card" key={room.id}>
                     <div className="room-info-box">
-                    <div>房型：{showValue(room.name)}</div>
-                    <div>容量：{showValue(room.max_occupancy)}</div>
-                    <div>该房型总量：{showValue(room.total_rooms)}</div>
-                    <div>基础价格：{showValue(room.base_price)}</div>
+                    <div className="room-type-title">房间类型：{showValue(room.name)}</div>
+                    <div>房型可居住最大人数：{showValue(room.max_occupancy)}</div>
+                    <div>房型总数量：{showValue(room.total_rooms)}</div>
+                    <div>房型基础价格：{showValue(room.base_price/100)}</div>
                     <div>是否可退还：{room.refundable != null ? (room.refundable ? '是' : '否') : '暂无'}</div>
                     <div>是否包含早餐：{room.breakfast != null ? (room.breakfast ? '是' : '否') : '暂无'}</div>
                     </div>
@@ -548,14 +581,14 @@ export default function HotelDetailEdit() {
                   placeholder="附近类型"
                 />
                 <br />
-                距离：
+                距离（km）：
                 <input
                   value={nearby.distance_km || ""}
                   onChange={(e) => handleArrayChange("nearby_points", index, "distance_km", e.target.value)}
                   placeholder="距离"
                 />
-                <button onClick={() => handleArrayDelete("rooms", index)}>删除</button>
               </div>
+              <button onClick={() => handleArrayDelete("rooms", index)}>删除</button>
               </div>
               ))}
               

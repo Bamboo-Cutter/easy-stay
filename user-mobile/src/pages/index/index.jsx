@@ -34,6 +34,7 @@ export default function Home() {
   const starOptions = ['不限', '经济', '三星', '四星', '五星']
   const tags = ['亲子酒店', '豪华酒店', '免费停车', '含早餐', '近地铁']
 
+<<<<<<< Updated upstream
   const daysInMonth = dayjs(`${currentYear}-${currentMonth + 1}-01`).daysInMonth()
   const dateList = Array.from({ length: daysInMonth }).map((_, i) => {
     return dayjs(`${currentYear}-${currentMonth + 1}-${i + 1}`).format('YYYY-MM-DD')
@@ -52,6 +53,43 @@ export default function Home() {
         setCity('上海')
       }
     })
+=======
+  // const daysInMonth = dayjs(`${currentYear}-${currentMonth + 1}-01`).daysInMonth()
+  // const dateList = Array.from({ length: daysInMonth }).map((_, i) =>
+  //   dayjs(`${currentYear}-${currentMonth + 1}-${i + 1}`).format('YYYY-MM-DD')
+  // )
+  const generateDateList = (year, month) => {
+    const firstDayOfMonth = dayjs().year(year).month(month).date(1);
+    const daysInMonth = firstDayOfMonth.daysInMonth();
+    const firstDayWeekday = firstDayOfMonth.day(); 
+    const cells = [];
+    for (let i = 0; i < firstDayWeekday; i++) {
+      cells.push(""); 
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      const fullDate = firstDayOfMonth.date(i).format('YYYY-MM-DD');
+      cells.push(fullDate);
+    }
+    while (cells.length < 42) {
+      cells.push("");
+    }
+    return cells;
+  };
+  const dateList = generateDateList(currentYear, currentMonth);
+
+  useEffect(() => {
+    // Taro.getLocation({
+    //   type: 'gcj02',
+    //   success: () => setCity('上海'),
+    //   fail: () => setCity('上海')
+    // })
+    try {
+      // 尝试系统定位
+      handleGetLocationByIP();
+    } catch (err) {
+      setCity('上海')
+    }
+>>>>>>> Stashed changes
   }, [])
 
   /* ---------------- 计算入住晚数 ---------------- */
@@ -135,6 +173,61 @@ export default function Home() {
     setShowCalendar(false)
   }
 
+<<<<<<< Updated upstream
+=======
+  const applyPreset = (preset) => {
+    setCity(preset.city)
+    setKeyword(preset.keyword)
+  }
+
+  const goCitySpot = (targetCity, targetKeyword) => {
+    Taro.navigateTo({
+      url: `/pages/hotelList/hotelList?city=${encodeURIComponent(targetCity)}&keyword=${encodeURIComponent(targetKeyword || '')}&checkIn=${encodeURIComponent(checkIn)}&checkOut=${encodeURIComponent(checkOut)}&min_price=${encodeURIComponent(toCentString(minPrice))}&max_price=${encodeURIComponent(toCentString(maxPrice))}&rooms_count=${roomsCount}&adults=${adultCount}`,
+    })
+  }
+
+  const starSummary = stars.length > 0 ? stars.join(' / ') : '不限星级'
+  const guestSummary = `${roomsCount}间房 · ${adultCount}位住客`
+  const currentExamples = DESTINATION_EXAMPLES[city] || ['酒店名', '商圈', '景点']
+  const destinationExampleText = `例如：${currentExamples.join('、')}`
+  const destinationPlaceholder = `输入酒店名、商圈、地标（如${currentExamples[0]}）`
+
+  const handleGetLocationByIP = async () => {
+    try {
+      Taro.showLoading({ title: '定位中...' });
+      // 1. 配置你的腾讯地图 Key
+      const QQ_MAP_KEY = 'BHWBZ-5226A-JOHKN-CJ364-AUDUQ-NUBCZ'; 
+      // 2. 调用腾讯地图 IP 定位接口
+      const res = await Taro.request({
+        url: 'https://apis.map.qq.com/ws/location/v1/ip',
+        data: {
+          key: QQ_MAP_KEY
+        },
+        method: 'GET'
+      });
+      // 3. 解析返回结果
+      if (res.data.status === 0) {
+        const city = res.data.result.ad_info.city; // 获取城市名，如 "上海市"
+        console.log('IP 定位成功：', city);
+        // 更新你的状态
+        setCity(city);
+        Taro.showToast({ title: `当前城市：${city}`, icon: 'none' });
+      } else {
+        // 如果报错（比如额度上限），抛出错误
+        throw new Error(res.data.message);
+      }
+    } catch (err) {
+      console.error('IP定位失败：', err);
+      // 容错处理：如果 Key 还是报错，可以给个手动选择的提示
+      setCity('上海');
+      Taro.showToast({ title: '定位失败，请手动选择', icon: 'none' });
+    } finally {
+      Taro.hideLoading();
+    }
+  };
+
+
+>>>>>>> Stashed changes
   return (
     <View className='home'>
 
@@ -146,16 +239,33 @@ export default function Home() {
             url: '/pages/hotelDetail/index?id=1'
           })}>
         <Image
+<<<<<<< Updated upstream
           className='banner-img'
           src='https://picsum.photos/800/300'
           mode='aspectFill'/>
         <View className='banner-mask'>
           <Text className='banner-text'>酒店7折起</Text>
+=======
+          className='hero-img'
+          src='https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80'
+          mode='aspectFill'
+        />
+        <View className='hero-overlay'>
+          <View className='hero-top'>
+            <Text className='hero-badge'>Easy Stay</Text>
+            <Text className='hero-chip'>{city === '定位中...' ? '定位中' : `${city} 热门`}</Text>
+          </View>
+          <View className='hero-sub'>
+            <Text className='hero-title'>酒店与住宿</Text>
+            {/* <Text className='hero-sub'>中文城市数据已接通，支持筛选与附近点位排序</Text> */}
+          </View>
+>>>>>>> Stashed changes
         </View>
       </View>
 
       {/* ================= 查询卡片 ================= */}
       <View className='search-card'>
+<<<<<<< Updated upstream
         {/* 第一行 */}
         <View className='row'>
           <View
@@ -164,6 +274,21 @@ export default function Home() {
           >
             <Text className='city'>{city}</Text>
           </View>
+=======
+        <View className='search-header'>
+          <View className='search-subtitle'>
+            <View className='search-local' onClick={handleGetLocationByIP}>定位</View>
+            <View className='location-icon' /> 
+            <View className='city-pill' onClick={() => setShowCityPicker(true)}>
+              {city}
+            </View>
+            {/* <Text className='search-subtitle'>选择城市、日期与预算，进入酒店列表页</Text> */}
+          </View>
+          <View className='city-pill' onClick={() => Taro.navigateTo({ url: '/pages/profile/index' })}>
+            我的
+          </View>
+        </View>
+>>>>>>> Stashed changes
 
           <View className='search-input'>
             <Input
@@ -200,6 +325,78 @@ export default function Home() {
           <View className='star-row'>
             <Text className='.form-label'>酒店星级</Text>
 
+<<<<<<< Updated upstream
+=======
+          <View className='mini-card'>
+            <Text className='mini-label'>价格区间（元）</Text>
+            <View className='price-box'>
+              <Input
+                style={{}}
+                placeholder='最低'placeholderStyle='line-height: 54rpx; color: #999;'
+                type='number'
+                value={minPrice}
+                maxlength={7}
+                onInput={(e) => setMinPrice(clampDigits(e.detail.value, 7))}
+              />
+              <Text className='price-divider'>-</Text>
+              <Input
+                placeholder='最高'
+                type='number'
+                value={maxPrice}
+                maxlength={7}
+                onInput={(e) => setMaxPrice(clampDigits(e.detail.value, 7))}
+              />
+            </View>
+          </View>
+        </View>
+
+        <View className='field-card' onClick={() => setShowGuestSheet(true)}>
+          <View className='field-row'>
+            <View className='field-main'>
+              <View className='field-icon'>住</View>
+              <View className='field-label-wrap'>
+                <Text className='field-label'>房间与住客</Text>
+                <Text className='field-value field-value-small'>{guestSummary}</Text>
+              </View>
+            </View>
+            <View className='night-pill'>修改</View>
+          </View>
+        </View>
+
+        <View className='quick-section'>
+          {/* <Text className='section-label'>热门搜索示例（点击填充）</Text> */}
+          <View className='quick-chips'>
+            {QUICK_PRESETS.map((item) => {
+              const active = city === item.city && keyword === item.keyword
+              return (
+                <View
+                  key={`${item.city}-${item.keyword}`}
+                  className={`quick-chip ${active ? 'quick-chip-active' : ''}`}
+                  onClick={() => applyPreset(item)}
+                >
+                  {item.label}
+                </View>
+              )
+            })}
+          </View>
+        </View>
+
+        <Button className='search-btn' onClick={handleSearch}>
+          查询酒店
+        </Button>
+      </View>
+
+      <View className='panel'>
+        <View className='panel-head'>
+          <Text className='panel-title'>热门城市</Text>
+        </View>
+        <View className='dest-row'>
+          {[
+            { city: '上海', sub: '外滩 / 陆家嘴', cls: 'dest-card-1', keyword: '外滩' },
+            { city: '成都', sub: '春熙路 / 太古里', cls: 'dest-card-2', keyword: '春熙路' },
+            { city: '杭州', sub: '西湖 / 龙翔桥', cls: 'dest-card-3', keyword: '西湖' }
+          ].map((item) => (
+>>>>>>> Stashed changes
             <View
               className='star-select-box'
               onClick={() => setShowStarSelect(true)}
@@ -328,6 +525,7 @@ export default function Home() {
               </View>
             </View>
 
+<<<<<<< Updated upstream
            <View className='calendar-grid'>
             {dateList.map((date, index) => {
               const onlyCheckInSelected = tempCheckIn && !tempCheckOut
@@ -341,6 +539,29 @@ export default function Home() {
                 tempCheckOut &&
                 dayjs(date).isAfter(dayjs(tempCheckIn), 'day') &&
                 dayjs(date).isBefore(dayjs(tempCheckOut), 'day')
+=======
+            <View className='calendar-grid'>
+              {['日', '一', '二', '三', '四', '五', '六'].map(week => (
+                <View key={week} className='calendar-weekday'>
+                  {week}
+                </View>
+              ))}
+
+              {dateList.map((date, idx) => {
+                if (!date) return <View key={`blank-${idx}`} className='sheet-day blank' />;
+                const onlyCheckInSelected = tempCheckIn && !tempCheckOut
+                const isPast = dayjs(date).isBefore(todayDate, 'day')
+                const isDisabled =
+                  isPast ||
+                  (onlyCheckInSelected &&
+                    dayjs(date).isBefore(dayjs(tempCheckIn), 'day'))
+                const isSelected = date === tempCheckIn || date === tempCheckOut
+                const isInRange =
+                  tempCheckIn &&
+                  tempCheckOut &&
+                  dayjs(date).isAfter(dayjs(tempCheckIn), 'day') &&
+                  dayjs(date).isBefore(dayjs(tempCheckOut), 'day')
+>>>>>>> Stashed changes
 
 
               return (

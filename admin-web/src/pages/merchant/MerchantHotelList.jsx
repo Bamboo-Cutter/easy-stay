@@ -33,6 +33,7 @@ export default function MerchantHotelList() {
           },
         });
         setHotels(res.data);
+        // console.log(res.data)
       } catch (err) {
         console.error("获取酒店列表失败:", err);
       } finally {
@@ -80,7 +81,24 @@ export default function MerchantHotelList() {
 
   return (
     <div className="hotel-list">
+<<<<<<< Updated upstream
       <h2>我的酒店列表</h2>
+=======
+      <div className="list-page-head">
+        <div>
+          <h2>我的酒店列表</h2>
+          <div className="list-page-subtitle">
+            管理商家名下酒店，查看审核状态并执行提审/下线操作。
+          </div>
+        </div>
+        <div className="list-summary">
+          <div className="summary-chip">总酒店数 <strong>{hotels.length}</strong></div>
+          <div className="summary-chip">已上线 <strong>{statusCounts.APPROVED || 0}</strong></div>
+          <div className="summary-chip">审核中 <strong>{statusCounts.PENDING || 0}</strong></div>
+          <div className="summary-chip">草稿 <strong>{statusCounts.DRAFT || 0}</strong></div>
+        </div>
+      </div>
+>>>>>>> Stashed changes
 
       {/* Tab */}
       <div className="tab-bar">

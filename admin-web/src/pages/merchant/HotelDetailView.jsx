@@ -3,86 +3,7 @@ import { useParams, useNavigate } from "react-router-dom"
 import { AuthContext } from "@/auth/AuthContext.jsx";
 import axios from "axios"
 import "./HotelDetail.css"
-import "./HotelList.css"
-
-
-
-
-// function PriceCalendar({ priceCalendar }) {
-//   const [currentDate, setCurrentDate] = useState(new Date());
-
-//   const priceMap = useMemo(() => {
-//     const map = new Map();
-//     if (!priceCalendar) return map;
-
-//     priceCalendar.forEach(item => {
-//       const dateKey = new Date(item.date).toISOString().split("T")[0];
-//       map.set(dateKey, item.price);
-//     });
-//     return map;
-//   }, [priceCalendar]);
-
-//   const year = currentDate.getFullYear();
-//   const month = currentDate.getMonth();
-
-//   const firstDay = new Date(year, month, 1).getDay();
-//   const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-//   const days = [];
-//   for (let i = 0; i < firstDay; i++) days.push(null);
-//   for (let i = 1; i <= daysInMonth; i++) days.push(i);
-
-//   const changeMonth = (offset) => {
-//     setCurrentDate(new Date(year, month + offset, 1));
-//   };
-
-//   return (
-//     <div className="calendar-container">
-//       <div className="calendar-top">
-//         <h3 className="calendar-title">价格日历表</h3>
-//         <button
-//           className="calendar-edit-btn"
-//           onClick={() => navigate(`/calendarEdit/${roomId}`)}>
-//           编辑
-//         </button>
-//       </div>
-
-//       <div className="calendar-header">
-//         <button onClick={() => changeMonth(-1)}>‹</button>
-//         <span>{year}年 {month + 1}月</span>
-//         <button onClick={() => changeMonth(1)}>›</button>
-//       </div>
-
-//       <div className="calendar-grid">
-//         {["日","一","二","三","四","五","六"].map(d => (
-//           <div key={d} className="calendar-week">{d}</div>
-//         ))}
-
-//         {days.map((day, index) => {
-//           if (!day) return <div key={index} className="calendar-cell empty" />;
-
-//           const dateKey = new Date(year, month, day)
-//             .toISOString()
-//             .split("T")[0];
-
-//           const price = priceMap.get(dateKey);
-
-//           return (
-//             <div key={index} className="calendar-cell">
-//               <div className="calendar-day">{day}</div>
-
-//               {price && (
-//                 <div className="calendar-price">
-//                   ¥{price}
-//                 </div>
-//               )}
-//             </div>
-//           );
-//         })}
-//       </div>
-//     </div>
-//   );
-// }
+// import "./HotelList.css"
 
 
 export default function HotelDetailView() {
@@ -94,6 +15,17 @@ export default function HotelDetailView() {
   const [hotel, setHotel] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  
+  const key_name =
+    {
+      name_cn: "中文名",
+      name_en: "英文名",
+      address: "📍 地址",
+      star: "⭐ 星级",
+      type: "📍 酒店类型",
+      city: "📍 所在城市",
+      open_year: "📅 开业时间",
+    }
   
   const [auditResult, setAuditResult] = useState("");
   const [rejectReason, setRejectReason] = useState("");
@@ -195,37 +127,58 @@ export default function HotelDetailView() {
         </div>
       </div>
 
-      <div className="hotel-info">
-        <div className="info-item">📍 地址：{showValue(hotel.address)}</div>
-        <div className="info-item">⭐ 星级：{showValue(hotel.star)}</div>
-        <div className="info-item">📍 所在城市：{showValue(hotel.city)}</div>
-        <div className="info-item">📍 酒店类型：{showValue(hotel.type)}</div>
-        <div className="info-item">📅 开业时间：{showValue(formatDate(hotel.open_year))}</div>
-        <div className="info-item">
-          酒店标签：
-          {hotel.hotel_tags && hotel.hotel_tags.length > 0
-            ? hotel.hotel_tags.map((tag, index) => (
-                <span key={tag.id} style={{ marginRight: 8 }}>
-                  {showValue(tag.tag)}
-                </span>
-              ))
-            : "暂无"}
+
+       <div className="hotel-base-info-container">
+        <div className="field-group address-field" >
+          <span>{key_name["address"]}：</span>
+            <div className="field-value">{showValue(hotel["address"])}</div>
         </div>
+        <div className="field-group star-field" >
+          <span>{key_name["star"]}：</span>
+            <div className="field-value">{showValue(hotel["star"])}星</div>
+        </div>
+        <div className="field-group city-field">
+          <span>{key_name["city"]}：</span>
+            <div className="field-value-text">{showValue(hotel["city"])}</div>
+        </div>
+        <div className="field-group type-field">
+          <span>{key_name["type"]}：</span>
+            <div className="field-value-text">{showValue(hotel["type"])}</div>
+        </div>
+        <div className="field-group date-field" >
+          <span>{key_name["open_year"]}：</span>
+              <div className="field-value-text">{showValue(formatDate(hotel.open_year))}</div>
+          </div>
       </div>
 
-      <div className="images-grid-container">
-        {hotel.hotel_images && hotel.hotel_images.length > 0
-          ? hotel.hotel_images.map((image, index) => (
-              <div key={index} className="image-wrapper">
-                <img
-                  src={showValue(image.image_url)}
-                  alt={`hotel-${index}`}
-                  className="hotel-image"
-                />
-              </div>
-            ))
-          : "暂无图片"}
+    <div className="hotel-tags-container">
+      <div className="tags-title">🏷️ 酒店标签</div>
+      <div className="tags-wrapper">
+        {/* 展示态 */}
+        {hotel.hotel_tags.map((tag) => (
+          <span key={tag.id} className="tag-badge-display">
+            {tag.tag}
+          </span>
+        ))}
       </div>
+    </div>
+
+    {/* 图片展示 */}
+    <div className="rooms">
+      <h2>酒店图片</h2>
+        <div className="images-grid-container">{
+        (hotel.hotel_images && hotel.hotel_images.length) > 0
+        ? hotel.hotel_images.map((image, index) => (
+            <div key={index} className="image-wrapper">
+              <img
+                src={showValue(image.image_url)}
+                alt={`hotel-${index}`}
+                className="hotel-image"
+              />
+            </div>
+          )) : "暂无图片"}
+        </div> 
+    </div>
 
       <div className="rooms">
         <h2>房间信息</h2>
@@ -233,10 +186,10 @@ export default function HotelDetailView() {
           ? hotel.rooms.map((room, index) => (
               <div className="room-card" key={room.id}>
                 <div className="room-info-box">
-                <div>房型：{showValue(room.name)}</div>
-                <div>容量：{showValue(room.max_occupancy)}</div>
-                <div>该房型总量：{showValue(room.total_rooms)}</div>
-                <div>基础价格：{showValue(room.base_price)}</div>
+                <div className="room-type-title">房型：{showValue(room.name)}</div>
+                <div>房间可居住最大人数：{showValue(room.max_occupancy)}</div>
+                <div>该房型总数量：{showValue(room.total_rooms)}</div>
+                <div>基础价格（元）：{showValue(room.base_price/100)}</div>
                 <div>是否可退还：{room.refundable != null ? (room.refundable ? '是' : '否') : '暂无'}</div>
                 <div>是否包含早餐：{room.breakfast != null ? (room.breakfast ? '是' : '否') : '暂无'}</div>
                 </div>

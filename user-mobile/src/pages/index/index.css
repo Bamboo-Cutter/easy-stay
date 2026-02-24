@@ -34,13 +34,104 @@
 
 .banner-text {
   color: #fff;
+<<<<<<< Updated upstream
   font-size: 36rpx;
   font-weight: bold;
+=======
+  border-radius: 999rpx;
+  padding: 10rpx 18rpx;
+  font-size: 22rpx;
+  backdrop-filter: blur(6rpx);
+}
+
+.hero-chip {
+  background: rgba(17, 24, 39, 0.45);
+  color: #fff;
+  border-radius: 999rpx;
+  padding: 8rpx 16rpx;
+  font-size: 22rpx;
+}
+
+.hero-title {
+  color: #fff;
+  font-size: 56rpx;
+  font-weight: 700;
+  line-height: 1.15;
+  /* margin-bottom: 30rpx; */
+}
+
+.hero-sub {
+  margin-bottom: 30rpx;
+  /* color: rgba(255, 255, 255, 0.88);
+  font-size: 24rpx; */
+>>>>>>> Stashed changes
 }
 
 /* ===== 查询卡片 ===== */
 .search-card {
+<<<<<<< Updated upstream
   margin-top: 30rpx;
+=======
+  margin-top: -42rpx;
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 28rpx;
+  padding: 24rpx;
+  box-shadow: 0 18rpx 44rpx rgba(20, 34, 80, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10rpx);
+}
+
+.search-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.search-subtitle {
+  /* font-size: 22rpx; */
+  /* color: #667085; */
+  display: flex;
+  gap: 10rpx;
+  width: 40%;
+  flex-direction: row;       /* 水平排列 */
+  align-items: center;
+}
+
+.search-local {
+  /* display: flex;  */
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #101828;
+}
+
+.location-icon {
+  width: 32rpx;
+  height: 32rpx;
+  margin-right: 8rpx;
+  /* 确保这里使用了双引号包裹 URL，且所有的 # 都换成了 %23 */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23007AFF'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom;
+  /* display: inline-block; */
+  vertical-align: middle;
+}
+
+.city-pill {
+  padding: 12rpx 18rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #0f6bff, #4f8dff);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 18rpx rgba(15, 107, 255, 0.2);
+}
+
+.field-card {
+>>>>>>> Stashed changes
   background: #fff;
   border-radius: 32rpx;
   padding: 40rpx;
@@ -56,10 +147,76 @@
   margin-bottom: 30rpx;
 }
 
+<<<<<<< Updated upstream
 /* 城市 */
 .city {
   font-size: 34rpx;
   font-weight: bold;
+=======
+.field-icon {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 14rpx;
+  background: #edf3ff;
+  color: #1d4ed8;
+  font-size: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 14rpx;
+  flex: none;
+}
+
+.field-label-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-label {
+  display: block;
+  font-size: 22rpx;
+  color: #667085;
+  margin-bottom: 6rpx;
+}
+
+.field-value {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.2;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.field-value-light {
+  color: #475467;
+  font-weight: 500;
+}
+
+.field-value-small {
+  font-size: 24rpx;
+}
+
+.night-pill {
+  padding: 12rpx 14rpx;
+  border-radius: 16rpx;
+  background: #eef4ff;
+  color: #175cd3;
+  font-size: 22rpx;
+  font-weight: 700;
+  flex: none;
+}
+
+.search-input-wrap {
+  margin-top: 12rpx;
+  background: #f7f9fc;
+  border-radius: 16rpx;
+  padding: 0 16rpx;
+  border: 1px solid #edf0f5;
+  align-items: center;
+>>>>>>> Stashed changes
 }
 
 /* 搜索框 */
@@ -76,7 +233,11 @@
   display: flex;
   align-items: center;
   font-size: 28rpx;
+<<<<<<< Updated upstream
   height: 80rpx;
+=======
+  align-content: center;
+>>>>>>> Stashed changes
 }
 
 .date-text {
@@ -140,7 +301,16 @@
 .price-box Input {
   width: 120rpx;
   text-align: center;
+<<<<<<< Updated upstream
   font-size: 25rpx;
+=======
+  height: 54rpx;
+  font-size: 24rpx;
+  align-content: center;
+  padding: 0;          /* 清除 Input 自带的内边距 */
+  margin: 0;           /* 清除外边距 */
+  vertical-align: top;
+>>>>>>> Stashed changes
 }
 
 /* Tags */
@@ -270,8 +440,9 @@
 }
 
 .calendar-grid {
-  display: flex;
+  display: grid;
   flex-wrap: wrap;
+<<<<<<< Updated upstream
   margin-top: 20rpx;
   box-sizing: border-box;
 }
@@ -281,6 +452,31 @@
   text-align: center;
   padding: 20rpx 0;
   border-radius: 0%;
+=======
+  margin-top: 12rpx;
+  grid-template-columns: repeat(7, 1fr); /* 强制分成7列 */
+  gap: 10rpx;
+  padding: 20rpx 0;
+}
+
+/* 星期表头的样式 */
+.calendar-weekday {
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;      /* 颜色淡一点 */
+  font-weight: bold;
+  padding-bottom: 20rpx;
+}
+
+.calendar-day {
+  font-size: 28rpx;
+  border-radius: 14rpx;
+  color: #344054;
+  aspect-ratio: 1;  /* 保持正方形 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+>>>>>>> Stashed changes
 }
 
 .calendar-day.active {
