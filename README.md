@@ -1,11 +1,11 @@
 # Easy-Stay Hotel
 
-一个酒店预订演示系统仓库，包含后端 API、用户端（Taro/H5）和商户/管理员后台（React/Vite）。
+一个酒店预订演示系统仓库，包含后端 API、用户端（Taro）和商户/管理员后台（React/Vite）。
 
 ## 项目结构
 
 - `apps/api`：后端服务（NestJS + Prisma + PostgreSQL）
-- `user-mobile`：用户端（Taro React，当前主要用于 H5 联调）
+- `user-mobile`：用户端（Taro React，当前主要用于联调）
 - `admin-web`：商户/管理员后台（React + Vite）
 - `docker-compose.yml`：本地 PostgreSQL 启动配置
 - `er.png`：数据库 ER 图
