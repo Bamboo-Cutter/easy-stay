@@ -11,6 +11,7 @@ import { SetTagsDto } from './dto/set-tags.dto';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpsertPriceDto } from './dto/upsert-price.dto';
 import { SetHotelStatusDto } from './dto/set-hotel-status.dto';
+import { applyHotelUpsertRelations, buildHotelUpdateData } from '../common/hotel-upsert.helpers';
 
 @Injectable()
 export class MerchantService {
@@ -52,6 +53,7 @@ export class MerchantService {
       merchant_id: true,
       // 如果还需要显示评分摘要，可以保留这个小的关联
       review_summary: true,
+      reject_reason: true,
       // 如果需要商户基本信息，可以精简选择
       merchant: {
         select: {
@@ -191,15 +193,8 @@ export class MerchantService {
     const dates = this.getFutureDates(this.defaultCalendarDays);
 
     return this.prisma.$transaction(async (tx) => {
-      const hotelUpdateData: any = {};
-      if (dto.name_cn !== undefined) hotelUpdateData.name_cn = dto.name_cn;
-      if (dto.name_en !== undefined) hotelUpdateData.name_en = dto.name_en;
-      if (dto.address !== undefined) hotelUpdateData.address = dto.address;
-      if (dto.city !== undefined) hotelUpdateData.city = dto.city;
-      if (dto.star !== undefined) hotelUpdateData.star = dto.star;
-      if (dto.type !== undefined) hotelUpdateData.type = dto.type;
-      if (dto.open_year !== undefined) hotelUpdateData.open_year = new Date(dto.open_year);
-      if (dto.status !== undefined) hotelUpdateData.status = dto.status;
+      // 基础字段更新与关联子表更新拆开，便于复用并降低 admin/merchant 双改风险。
+      const hotelUpdateData = buildHotelUpdateData(dto);
 
       if (Object.keys(hotelUpdateData).length > 0) {
         await tx.hotels.update({
@@ -208,85 +203,8 @@ export class MerchantService {
         });
       }
 
-      if (dto.images !== undefined) {
-        await tx.hotel_images.deleteMany({ where: { hotel_id: hotelId } });
-        if (dto.images.length > 0) {
-          await tx.hotel_images.createMany({
-            data: dto.images.map((x, index) => ({
-              hotel_id: hotelId,
-              url: x.url,
-              sort: x.sort ?? index,
-            })),
-          });
-        }
-      }
-
-      if (dto.tags !== undefined) {
-        const tags = [...new Set(dto.tags)];
-        await tx.hotel_tags.deleteMany({ where: { hotel_id: hotelId } });
-        if (tags.length > 0) {
-          await tx.hotel_tags.createMany({
-            data: tags.map((tag) => ({ hotel_id: hotelId, tag })),
-            skipDuplicates: true,
-          });
-        }
-      }
-
-      if (dto.nearby_points !== undefined) {
-        await tx.nearby_points.deleteMany({ where: { hotel_id: hotelId } });
-        if (dto.nearby_points.length > 0) {
-          await tx.nearby_points.createMany({
-            data: dto.nearby_points.map((x) => ({
-              hotel_id: hotelId,
-              type: x.type,
-              name: x.name,
-              distance_km: x.distance_km,
-            })),
-          });
-        }
-      }
-
-      if (dto.rooms !== undefined) {
-        const oldRooms = await tx.rooms.findMany({
-          where: { hotel_id: hotelId },
-          select: { id: true },
-        });
-        const oldRoomIds = oldRooms.map((x) => x.id);
-
-        if (oldRoomIds.length > 0) {
-          await tx.price_calendar.deleteMany({ where: { room_id: { in: oldRoomIds } } });
-          await tx.room_inventory_daily.deleteMany({ where: { room_id: { in: oldRoomIds } } });
-          await tx.rooms.deleteMany({ where: { id: { in: oldRoomIds } } });
-        }
-
-        for (const room of dto.rooms) {
-          await tx.rooms.create({
-            data: {
-              hotel_id: hotelId,
-              name: room.name,
-              max_occupancy: room.max_occupancy,
-              total_rooms: room.total_rooms,
-              base_price: room.base_price,
-              refundable: room.refundable,
-              breakfast: room.breakfast,
-              price_calendar: {
-                create: dates.map((date) => ({
-                  date,
-                  price: room.base_price,
-                })),
-              },
-              inventory_daily: {
-                create: dates.map((date) => ({
-                  date,
-                  total_rooms: room.total_rooms,
-                  blocked_rooms: 0,
-                  reserved_rooms: 0,
-                })),
-              },
-            },
-          });
-        }
-      }
+      // 共享 helper 负责“先删后建”的关联数据替换逻辑（图片/标签/周边/房型）。
+      await applyHotelUpsertRelations(tx, hotelId, dto, dates);
 
       return tx.hotels.findUnique({
         where: { id: hotelId },

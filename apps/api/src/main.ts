@@ -32,7 +32,14 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-  const allowedOrigins = new Set(['http://localhost:5173', 'http://localhost:10086']);
+  const allowedOrigins = new Set([
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:10086',
+    'http://127.0.0.1:10086',
+    'http://localhost:10087',
+    'http://127.0.0.1:10087',
+  ]);
   app.enableCors({
     origin: (origin, cb) => {
       if (!origin || allowedOrigins.has(origin)) return cb(null, true);

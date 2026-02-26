@@ -4,21 +4,64 @@ import {
   Image,
   Input,
   Button,
-  ScrollView
+  ScrollView,
+  Swiper,
+  SwiperItem
 } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { useEffect, useState } from 'react'
 import dayjs from 'dayjs'
+import { api } from '../../utils/api'
 import './index.css'
 
-const CITY_OPTIONS = ['上海', '北京', '广州', '深圳', '杭州', '成都', '东京', '新加坡']
+const DOMESTIC_HOT_CITIES = ['上海', '北京', '广州', '深圳', '杭州', '成都']
+const DOMESTIC_ALL_CITIES = [
+  '上海', '北京', '广州', '深圳', '杭州', '成都',
+  '重庆', '天津', '南京', '苏州', '武汉', '西安',
+  '长沙', '郑州', '青岛', '厦门', '福州', '济南',
+  '合肥', '宁波', '无锡', '东莞', '佛山', '珠海',
+  '昆明', '贵阳', '南宁', '海口', '三亚', '南昌',
+  '太原', '石家庄', '沈阳', '大连', '长春', '哈尔滨',
+  '呼和浩特', '兰州', '西宁', '银川', '乌鲁木齐', '拉萨'
+]
+const OVERSEAS_CITIES = ['东京', '新加坡']
+const CITY_OPTIONS = Array.from(new Set([...DOMESTIC_ALL_CITIES, ...OVERSEAS_CITIES]))
+const DEMO_OPEN_CITIES = new Set(['上海', '北京', '广州', '深圳', '杭州', '成都', '东京', '新加坡'])
+const DOMESTIC_ALL_OTHER_CITIES = DOMESTIC_ALL_CITIES.filter((city) => !DOMESTIC_HOT_CITIES.includes(city))
+const DOMESTIC_CITY_INITIALS = {
+  重庆: 'C', 天津: 'T', 南京: 'N', 苏州: 'S', 武汉: 'W', 西安: 'X',
+  长沙: 'C', 郑州: 'Z', 青岛: 'Q', 厦门: 'X', 福州: 'F', 济南: 'J',
+  合肥: 'H', 宁波: 'N', 无锡: 'W', 东莞: 'D', 佛山: 'F', 珠海: 'Z',
+  昆明: 'K', 贵阳: 'G', 南宁: 'N', 海口: 'H', 三亚: 'S', 南昌: 'N',
+  太原: 'T', 石家庄: 'S', 沈阳: 'S', 大连: 'D', 长春: 'C', 哈尔滨: 'H',
+  呼和浩特: 'H', 兰州: 'L', 西宁: 'X', 银川: 'Y', 乌鲁木齐: 'W', 拉萨: 'L',
+}
+const DOMESTIC_LETTER_GROUPS = Object.entries(
+  DOMESTIC_ALL_OTHER_CITIES.reduce((acc, city) => {
+    const letter = DOMESTIC_CITY_INITIALS[city] || '#'
+    if (!acc[letter]) acc[letter] = []
+    acc[letter].push(city)
+    return acc
+  }, {})
+)
+  .sort(([a], [b]) => a.localeCompare(b))
+  .map(([letter, cities]) => ({ letter, cities }))
 const STAR_OPTIONS = ['不限', '经济', '三星', '四星', '五星']
+const QQ_MAP_KEY = 'BHWBZ-5226A-JOHKN-CJ364-AUDUQ-NUBCZ'
 
 const QUICK_PRESETS = [
-  { label: '外滩夜景', city: '上海', keyword: '外滩' },
-  { label: '国贸商务', city: '北京', keyword: '国贸' },
+  { label: '陆家嘴夜景', city: '上海', keyword: '陆家嘴' },
+  { label: '王府井商圈', city: '北京', keyword: '王府井' },
   { label: '西湖度假', city: '杭州', keyword: '西湖' },
   { label: '春熙路', city: '成都', keyword: '春熙路' }
+]
+
+const ATTRIBUTE_QUICK_TAGS = [
+  { key: 'family', label: '亲子友好', breakfast: true, refundable: true },
+  { key: 'luxury', label: '豪华五星', minStar: 5, maxStar: 5 },
+  { key: 'budget', label: '经济实惠', maxPriceYuan: 400 },
+  { key: 'free_cancel', label: '可免费取消', refundable: true },
+  { key: 'breakfast', label: '含早餐', breakfast: true },
 ]
 
 const DESTINATION_EXAMPLES = {
@@ -31,6 +74,12 @@ const DESTINATION_EXAMPLES = {
   东京: ['银座', '新宿', '涩谷'],
   新加坡: ['滨海湾', '乌节路', '克拉码头'],
 }
+
+const CITY_PICKER_SECTIONS = [
+  { key: 'hot', title: '国内热门', cities: DOMESTIC_HOT_CITIES },
+  { key: 'domestic', title: '全国城市', cities: DOMESTIC_ALL_OTHER_CITIES },
+  { key: 'overseas', title: '海外', cities: OVERSEAS_CITIES },
+]
 
 const clampText = (value, max = 24) =>
   String(value ?? '')
@@ -53,6 +102,21 @@ const toCentString = (yuanText) => {
   return String(Math.round(n * 100))
 }
 
+const toYuanText = (centValue) => {
+  const n = Number(centValue)
+  if (!Number.isFinite(n) || n <= 0) return '--'
+  return String(Math.round(n / 100))
+}
+
+const normalizeCityName = (raw) => {
+  const text = String(raw || '').trim()
+  if (!text) return ''
+  const directHit = CITY_OPTIONS.find((item) => text === item || text.startsWith(item))
+  if (directHit) return directHit
+  const stripped = text.replace(/(特别行政区|自治州|地区|盟|市|区|县)$/u, '')
+  return CITY_OPTIONS.find((item) => stripped === item || stripped.startsWith(item)) || stripped || text
+}
+
 export default function Home() {
   const [city, setCity] = useState('定位中...')
   const [keyword, setKeyword] = useState('')
@@ -68,9 +132,14 @@ export default function Home() {
   const [showCityPicker, setShowCityPicker] = useState(false)
   const [showStarSelect, setShowStarSelect] = useState(false)
   const [showGuestSheet, setShowGuestSheet] = useState(false)
+  const [domesticLetter, setDomesticLetter] = useState(DOMESTIC_LETTER_GROUPS[0]?.letter || '')
   const [stars, setStars] = useState([])
   const [roomsCount, setRoomsCount] = useState(1)
   const [adultCount, setAdultCount] = useState(2)
+  const [featuredHotels, setFeaturedHotels] = useState([])
+  const [featuredLoading, setFeaturedLoading] = useState(false)
+  const [banners, setBanners] = useState([])
+  const [activeQuickAttrKey, setActiveQuickAttrKey] = useState('')
 
   // const daysInMonth = dayjs(`${currentYear}-${currentMonth + 1}-01`).daysInMonth()
   // const dateList = Array.from({ length: daysInMonth }).map((_, i) =>
@@ -96,18 +165,46 @@ export default function Home() {
   const dateList = generateDateList(currentYear, currentMonth);
 
   useEffect(() => {
-    // Taro.getLocation({
-    //   type: 'gcj02',
-    //   success: () => setCity('上海'),
-    //   fail: () => setCity('上海')
-    // })
     try {
-      // 尝试系统定位
-      handleGetLocationByIP();
+      handleLocate()
     } catch (err) {
       setCity('上海')
     }
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    api.getBanners()
+      .then((list) => {
+        if (!cancelled) setBanners(Array.isArray(list) ? list : [])
+      })
+      .catch(() => {
+        if (!cancelled) setBanners([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    const nextCity = normalizeCityName(city)
+    if (!nextCity || nextCity === '定位中...') return
+    let cancelled = false
+    setFeaturedLoading(true)
+    api.getFeatured(nextCity)
+      .then((list) => {
+        if (!cancelled) setFeaturedHotels(Array.isArray(list) ? list : [])
+      })
+      .catch(() => {
+        if (!cancelled) setFeaturedHotels([])
+      })
+      .finally(() => {
+        if (!cancelled) setFeaturedLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [city])
 
   useEffect(() => {
     const today = dayjs().startOf('day')
@@ -151,8 +248,9 @@ export default function Home() {
 
   const handleSearch = () => {
     const [minStar, maxStar] = getStarRange(stars)
+    const quickAttr = ATTRIBUTE_QUICK_TAGS.find((x) => x.key === activeQuickAttrKey) || null
     const query = [
-      `city=${encodeURIComponent(city || '')}`,
+      `city=${encodeURIComponent(normalizedCity || city || '')}`,
       `keyword=${encodeURIComponent(keyword || '')}`,
       `checkIn=${encodeURIComponent(checkIn || '')}`,
       `checkOut=${encodeURIComponent(checkOut || '')}`,
@@ -166,6 +264,11 @@ export default function Home() {
       query.push(`min_star=${minStar}`)
       query.push(`max_star=${maxStar}`)
     }
+    if (quickAttr?.minStar) query.push(`min_star=${quickAttr.minStar}`)
+    if (quickAttr?.maxStar) query.push(`max_star=${quickAttr.maxStar}`)
+    if (quickAttr?.maxPriceYuan) query.push(`max_price=${encodeURIComponent(String(Math.round(quickAttr.maxPriceYuan * 100)))}`)
+    if (quickAttr?.breakfast) query.push('breakfast=true')
+    if (quickAttr?.refundable) query.push('refundable=true')
 
     Taro.navigateTo({
       url: `/pages/hotelList/hotelList?${query.join('&')}`
@@ -191,7 +294,24 @@ export default function Home() {
   const applyPreset = (preset) => {
     setCity(preset.city)
     setKeyword(preset.keyword)
+    // 热门示例用于快速体验，默认清空额外筛选，避免被残留条件筛空
+    setMinPrice('')
+    setMaxPrice('')
+    setStars([])
+    setActiveQuickAttrKey('')
   }
+
+  const handleSelectCity = (nextCity) => {
+    if (!DEMO_OPEN_CITIES.has(nextCity)) {
+      Taro.showToast({ title: `${nextCity} 暂无演示数据`, icon: 'none' })
+      return
+    }
+    setCity(nextCity)
+    setShowCityPicker(false)
+  }
+
+  const selectedDomesticGroup =
+    DOMESTIC_LETTER_GROUPS.find((group) => group.letter === domesticLetter) || DOMESTIC_LETTER_GROUPS[0] || null
 
   const goCitySpot = (targetCity, targetKeyword) => {
     Taro.navigateTo({
@@ -201,53 +321,112 @@ export default function Home() {
 
   const starSummary = stars.length > 0 ? stars.join(' / ') : '不限星级'
   const guestSummary = `${roomsCount}间房 · ${adultCount}位住客`
-  const currentExamples = DESTINATION_EXAMPLES[city] || ['酒店名', '商圈', '景点']
+  const normalizedCity = normalizeCityName(city)
+  const currentExamples = DESTINATION_EXAMPLES[normalizedCity] || ['酒店名', '商圈', '景点']
   const destinationExampleText = `例如：${currentExamples.join('、')}`
   const destinationPlaceholder = `输入酒店名、商圈、地标（如${currentExamples[0]}）`
 
-  const handleGetLocationByIP = async () => {
+  const openHotelDetail = (hotelId) => {
+    if (!hotelId) return
+    Taro.navigateTo({
+      url: `/pages/hotelDetail/index?id=${hotelId}&check_in=${encodeURIComponent(checkIn || '')}&check_out=${encodeURIComponent(checkOut || '')}&rooms_count=${roomsCount}&adults=${adultCount}`,
+    })
+  }
+
+  const handleGetLocationByIP = async ({ silent = false, skipLoading = false } = {}) => {
     try {
-      Taro.showLoading({ title: '定位中...' });
-      // 1. 配置你的腾讯地图 Key
-      const QQ_MAP_KEY = 'BHWBZ-5226A-JOHKN-CJ364-AUDUQ-NUBCZ'; 
-      // 2. 调用腾讯地图 IP 定位接口
+      if (!skipLoading) Taro.showLoading({ title: '定位中...' })
       const res = await Taro.request({
         url: 'https://apis.map.qq.com/ws/location/v1/ip',
-        data: {
-          key: QQ_MAP_KEY
-        },
+        data: { key: QQ_MAP_KEY },
         method: 'GET'
-      });
-      // 3. 解析返回结果
+      })
       if (res.data.status === 0) {
-        const city = res.data.result.ad_info.city; // 获取城市名，如 "上海市"
-        console.log('IP 定位成功：', city);
-        // 更新你的状态
-        setCity(city);
-        Taro.showToast({ title: `当前城市：${city}`, icon: 'none' });
+        const nextCity = normalizeCityName(res.data.result?.ad_info?.city)
+        if (!nextCity) throw new Error('empty city from ip')
+        setCity(nextCity)
+        if (!silent) Taro.showToast({ title: `当前城市：${nextCity}`, icon: 'none' })
+        return nextCity
       } else {
-        // 如果报错（比如额度上限），抛出错误
-        throw new Error(res.data.message);
+        throw new Error(res.data.message)
       }
     } catch (err) {
-      console.error('IP定位失败：', err);
-      // 容错处理：如果 Key 还是报错，可以给个手动选择的提示
-      setCity('上海');
-      Taro.showToast({ title: '定位失败，请手动选择', icon: 'none' });
+      console.error('IP定位失败：', err)
+      if (!silent) Taro.showToast({ title: '定位失败，请手动选择', icon: 'none' })
+      throw err
     } finally {
-      Taro.hideLoading();
+      if (!skipLoading) Taro.hideLoading()
     }
-  };
+  }
+
+  const reverseGeocodeCity = async (latitude, longitude) => {
+    const res = await Taro.request({
+      url: 'https://apis.map.qq.com/ws/geocoder/v1/',
+      method: 'GET',
+      data: {
+        key: QQ_MAP_KEY,
+        location: `${latitude},${longitude}`,
+      },
+    })
+    if (res.data?.status !== 0) throw new Error(res.data?.message || 'reverse geocode failed')
+    const cityName =
+      res.data?.result?.address_component?.city ||
+      res.data?.result?.ad_info?.city ||
+      ''
+    const nextCity = normalizeCityName(cityName)
+    if (!nextCity) throw new Error('empty city from reverse geocode')
+    return nextCity
+  }
+
+  const handleLocate = async ({ silent = false } = {}) => {
+    Taro.showLoading({ title: '定位中...' })
+    try {
+      const geo = await Taro.getLocation({ type: 'gcj02' })
+      const nextCity = await reverseGeocodeCity(geo.latitude, geo.longitude)
+      setCity(nextCity)
+      if (!silent) Taro.showToast({ title: `定位成功：${nextCity}`, icon: 'none' })
+      return nextCity
+    } catch (err) {
+      console.error('GPS定位失败，尝试IP定位:', err)
+      try {
+        const nextCity = await handleGetLocationByIP({ silent: true, skipLoading: true })
+        if (!silent) Taro.showToast({ title: `已切换到IP定位：${nextCity}`, icon: 'none' })
+        return nextCity
+      } catch {
+        setCity('上海')
+        if (!silent) Taro.showToast({ title: '定位失败，已默认上海', icon: 'none' })
+        return '上海'
+      }
+    } finally {
+      Taro.hideLoading()
+    }
+  }
 
 
   return (
     <View className='home'>
       <View className='hero'>
-        <Image
-          className='hero-img'
-          src='https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80'
-          mode='aspectFill'
-        />
+        {banners.length ? (
+          <Swiper indicatorDots autoplay circular className='hero-swiper'>
+            {banners.map((item) => (
+              <SwiperItem key={item.id || item.title}>
+                <View className='hero-slide' onClick={() => openHotelDetail(item.id)}>
+                  <Image
+                    className='hero-img'
+                    src={item.image || 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80'}
+                    mode='aspectFill'
+                  />
+                </View>
+              </SwiperItem>
+            ))}
+          </Swiper>
+        ) : (
+          <Image
+            className='hero-img'
+            src='https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80'
+            mode='aspectFill'
+          />
+        )}
         <View className='hero-overlay'>
           <View className='hero-top'>
             <Text className='hero-badge'>Easy Stay</Text>
@@ -255,6 +434,11 @@ export default function Home() {
           </View>
           <View className='hero-sub'>
             <Text className='hero-title'>酒店与住宿</Text>
+            {!!banners.length && (
+              <Text className='hero-banner-tip'>
+                {banners[0]?.title || '精选酒店广告'} · 点击顶部图片查看详情
+              </Text>
+            )}
             {/* <Text className='hero-sub'>中文城市数据已接通，支持筛选与附近点位排序</Text> */}
           </View>
         </View>
@@ -263,7 +447,7 @@ export default function Home() {
       <View className='search-card'>
         <View className='search-header'>
           <View className='search-subtitle'>
-            <View className='search-local' onClick={handleGetLocationByIP}>定位</View>
+              <View className='search-local' onClick={() => handleLocate()}>定位</View>
             <View className='location-icon' /> 
             <View className='city-pill' onClick={() => setShowCityPicker(true)}>
               {city}
@@ -358,7 +542,25 @@ export default function Home() {
         </View>
 
         <View className='quick-section'>
-          {/* <Text className='section-label'>热门搜索示例（点击填充）</Text> */}
+          <Text className='section-label'>快捷标签（属性）</Text>
+          <View className='quick-chips'>
+            {ATTRIBUTE_QUICK_TAGS.map((item) => {
+              const active = activeQuickAttrKey === item.key
+              return (
+                <View
+                  key={item.key}
+                  className={`quick-chip ${active ? 'quick-chip-active' : ''}`}
+                  onClick={() => setActiveQuickAttrKey((v) => (v === item.key ? '' : item.key))}
+                >
+                  {item.label}
+                </View>
+              )
+            })}
+          </View>
+        </View>
+
+        <View className='quick-section'>
+          <Text className='section-label'>热门搜索示例</Text>
           <View className='quick-chips'>
             {QUICK_PRESETS.map((item) => {
               const active = city === item.city && keyword === item.keyword
@@ -378,6 +580,43 @@ export default function Home() {
         <Button className='search-btn' onClick={handleSearch}>
           查询酒店
         </Button>
+      </View>
+
+      <View className='panel'>
+        <View className='panel-head'>
+          <Text className='panel-title'>定位推荐</Text>
+          <Text className='panel-link'>{normalizedCity || city || '当前城市'}</Text>
+        </View>
+        {featuredLoading ? (
+          <View className='recommend-empty'>正在加载定位推荐...</View>
+        ) : featuredHotels.length ? (
+          <View className='recommend-list'>
+            {featuredHotels.slice(0, 4).map((item) => (
+              <View
+                key={item.id}
+                className='recommend-item'
+                onClick={() => openHotelDetail(item.id)}
+              >
+                <Image
+                  className='recommend-cover'
+                  mode='aspectFill'
+                  src={item.cover || `https://picsum.photos/seed/${item.id}/480/320`}
+                />
+                <View className='recommend-body'>
+                  <Text className='recommend-name'>{item.name_cn}</Text>
+                  <Text className='recommend-meta'>
+                    {item.city} · {Number(item.rating || 0).toFixed(1)}分 · {item.star || '-'}星
+                  </Text>
+                  <Text className='recommend-price'>
+                    ¥{toYuanText(item.min_price)} 起
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View className='recommend-empty'>当前城市暂无推荐，试试手动选择城市</View>
+        )}
       </View>
 
       <View className='panel'>
@@ -412,23 +651,42 @@ export default function Home() {
               <Text className='popup-close' onClick={() => setShowCityPicker(false)}>关闭</Text>
             </View>
             <ScrollView scrollY className='popup-body'>
-              <View className='city-grid'>
-                {CITY_OPTIONS.map((item) => {
-                  const active = city === item
-                  return (
-                    <View
-                      key={item}
-                      className={`city-tag ${active ? 'active-city' : ''}`}
-                      onClick={() => {
-                        setCity(item)
-                        setShowCityPicker(false)
-                      }}
-                    >
-                      {item}
-                    </View>
-                  )
-                })}
-              </View>
+              {CITY_PICKER_SECTIONS.map((section) => (
+                <View key={section.key} className='city-section'>
+                  <Text className='city-section-title'>{section.title}</Text>
+                  {section.key === 'domestic' && DOMESTIC_LETTER_GROUPS.length ? (
+                    <ScrollView scrollX className='city-letter-scroll' enableFlex>
+                      <View className='city-letter-row'>
+                        {DOMESTIC_LETTER_GROUPS.map((group) => (
+                          <View
+                            key={group.letter}
+                            className={`city-letter-chip ${domesticLetter === group.letter ? 'city-letter-chip-active' : ''}`}
+                            onClick={() => setDomesticLetter(group.letter)}
+                          >
+                            {group.letter}
+                          </View>
+                        ))}
+                      </View>
+                    </ScrollView>
+                  ) : null}
+                  <View className='city-grid'>
+                    {(section.key === 'domestic' ? (selectedDomesticGroup?.cities || []) : section.cities).map((item) => {
+                      const active = city === item
+                      const disabled = !DEMO_OPEN_CITIES.has(item)
+                      return (
+                        <View
+                          key={`${section.key}-${item}`}
+                          className={`city-tag ${active ? 'active-city' : ''} ${disabled ? 'city-tag-disabled' : ''}`}
+                          onClick={() => handleSelectCity(item)}
+                        >
+                          {item}
+                          {disabled ? <Text className='city-tag-badge'>演示未开</Text> : null}
+                        </View>
+                      )
+                    })}
+                  </View>
+                </View>
+              ))}
             </ScrollView>
           </View>
         </View>

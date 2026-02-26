@@ -277,17 +277,37 @@ export class HotelsService {
   }
 
   // 首页推荐酒店（可直接用于首屏卡片）
-  async featured() {
-    const items = await this.prisma.hotels.findMany({
-      where: { status: 'APPROVED' },
-      take: 12,
-      orderBy: [{ updated_at: 'desc' }],
-      include: {
-        hotel_images: { orderBy: { sort: 'asc' } },
-        review_summary: true,
-        rooms: { orderBy: { base_price: 'asc' }, take: 1 },
+  async featured(city?: string) {
+    const take = 12;
+    const requestedCity = city?.trim();
+    const include = {
+      hotel_images: { orderBy: { sort: 'asc' as const } },
+      review_summary: true,
+      rooms: { orderBy: { base_price: 'asc' as const }, take: 1 },
+    };
+
+    let items = await this.prisma.hotels.findMany({
+      where: {
+        status: 'APPROVED',
+        ...(requestedCity ? { city: requestedCity } : {}),
       },
+      take,
+      orderBy: [{ updated_at: 'desc' }],
+      include,
     });
+
+    if (requestedCity && items.length < take) {
+      const extra = await this.prisma.hotels.findMany({
+        where: {
+          status: 'APPROVED',
+          id: { notIn: items.map((x) => x.id) },
+        },
+        take: take - items.length,
+        orderBy: [{ updated_at: 'desc' }],
+        include,
+      });
+      items = [...items, ...extra];
+    }
 
     return items.map((h) => ({
       id: h.id,

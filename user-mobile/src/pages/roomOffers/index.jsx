@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import { api } from '../../utils/api'
 import './index.css'
 
+// 统一解码路由参数，避免 decodeURIComponent 因非法字符串直接抛异常。
 const decodeParam = (v) => {
   if (!v) return ''
   try {
@@ -14,12 +15,16 @@ const decodeParam = (v) => {
   }
 }
 
+// 将 URL 参数日期标准化为“当天 00:00 的 ISO 字符串”，失败则回退 fallback。
 const normalizeDateParam = (v, fallback) => {
   const raw = decodeParam(v)
   const d = dayjs(raw)
   return d.isValid() ? d.startOf('day').toISOString() : fallback
 }
 
+// 防御性修正入住/离店日期：
+// 1) 入住不能早于今天
+// 2) 离店必须晚于入住至少 1 天
 const ensureFutureStay = (checkInIso, checkOutIso) => {
   const today = dayjs().startOf('day')
   let inDay = dayjs(checkInIso)
@@ -29,9 +34,11 @@ const ensureFutureStay = (checkInIso, checkOutIso) => {
   return { checkIn: inDay.toISOString(), checkOut: outDay.toISOString() }
 }
 
+// 把路由参数中的数字限制在业务允许范围内，避免 NaN/越界污染状态。
 const clampInt = (v, min, max) => Math.max(min, Math.min(max, Number(v) || min))
 
 export default function RoomOffersPage() {
+  // 页面核心输入都来自路由参数：酒店 ID、入住离店、房间数、人数等。
   const router = Taro.getCurrentInstance().router
   const params = router?.params || {}
   const hotelId = params.hotelId || ''
@@ -45,15 +52,20 @@ export default function RoomOffersPage() {
   const initialRoomsCount = clampInt(params.rooms_count || 1, 1, 6)
   const initialAdults = clampInt(params.adults || Math.min(2, initialRoomsCount), 1, 12)
 
+  // 原始报价数据（后端返回结构），派生列表会基于它做分类展示。
   const [offers, setOffers] = useState(null)
   const [hotelName, setHotelName] = useState('酒店')
+  // “价格详情”底部弹层当前查看的房型。
   const [activeOffer, setActiveOffer] = useState(null)
   const [loading, setLoading] = useState(false)
+  // 房间数 / 成人数会触发重新拉报价。
   const [roomsCount, setRoomsCount] = useState(initialRoomsCount)
   const [adultCount, setAdultCount] = useState(initialAdults)
+  // 当前页面先按“成人数 = 住客数”处理（后续如果支持儿童，可从这里拆开）。
   const guestCount = adultCount
 
-
+  // 当酒店、日期、房间数、人数变化时，同时拉取“报价”和“酒店基础信息”。
+  // 这样页面顶部标题和报价列表能保持同一组筛选条件下的数据一致。
   useEffect(() => {
     if (!hotelId) return
     setLoading(true)
@@ -73,11 +85,12 @@ export default function RoomOffersPage() {
       })
       .catch((err) => Taro.showToast({ title: err.message || '加载房型失败', icon: 'none' }))
       .finally(() => setLoading(false))
-      
   }, [hotelId, checkIn, checkOut, roomsCount, adultCount])
 
+  // nights 主要用于价格说明弹层展示，不直接参与请求。
   const nights = Math.max(dayjs(checkOut).diff(dayjs(checkIn), 'day'), 1)
   const items = offers?.items || []
+  // 将后端返回房型按业务状态分组，便于 UI 分区渲染。
   const bookableItems = useMemo(() => items.filter((x) => x.is_bookable), [items])
   const soldOutItems = useMemo(
     () => items.filter((x) => !x.is_bookable && x.capacity_fit && x.availability_status === 'SOLD_OUT'),
@@ -90,6 +103,8 @@ export default function RoomOffersPage() {
   const noBookable = !loading && bookableItems.length === 0
   const noRoomsAtAll = !loading && items.length === 0
 
+  // 单个房型卡片渲染器：
+  // muted=true 用于“不可用分组”，视觉上做弱化但保留价格和说明供参考。
   const renderOfferCard = (item, muted = false) => {
     const reasonText = item.availability_status === 'PAST_DATE'
       ? '入住日期已过，请重新选择日期'
@@ -101,6 +116,7 @@ export default function RoomOffersPage() {
     return (
       <View key={item.room_id} className={`offer-card ${muted ? 'offer-card-muted' : ''}`}>
         <Image className='offer-cover' src={`https://picsum.photos/seed/${item.room_id}/480/320`} mode='aspectFill' />
+        {/* 目前房型图使用 Picsum 占位图（seed = room_id），不是后端真实房型图片。 */}
         <View className='offer-body'>
           <Text className='offer-name'>{item.room_name}</Text>
           <Text className='offer-meta'>
@@ -115,6 +131,7 @@ export default function RoomOffersPage() {
               <Button
                 className='book-btn'
                 disabled={!item.is_bookable}
+                // 将当前筛选条件透传到下单页，避免用户进入下单后还要重复选择日期/房间数。
                 onClick={() =>
                   Taro.navigateTo({
                     url: `/pages/booking/index?hotelId=${hotelId}&roomId=${item.room_id}&check_in=${encodeURIComponent(checkIn)}&check_out=${encodeURIComponent(checkOut)}&rooms_count=${roomsCount}&total_price=${item.total_price}&guest_count=${guestCount}`,
@@ -136,6 +153,7 @@ export default function RoomOffersPage() {
 
   return (
     <View className='offers-page'>
+      {/* 顶部摘要块目前先注释保留，后续可恢复作为“固定头部概览”。 */}
       {/* <View className='offers-top'>
         <Text onClick={() => Taro.navigateBack()}> ＜ </Text>
         <Text className='offers-title'>{hotelName}</Text>
@@ -148,6 +166,7 @@ export default function RoomOffersPage() {
       </View> */}
 
       <View className='offers-controls'>
+        {/* 房间数/成人数都会触发报价重新计算；这里不做 debounce，优先保证交互简单直接。 */}
         <View className='ctl-item'>
           <Text className='ctl-label'>房间</Text>
           <View className='ctl-actions'>
@@ -170,6 +189,7 @@ export default function RoomOffersPage() {
       </View>
 
       <ScrollView scrollY className='offers-list'>
+        {/* 下面几个空态是互斥的：加载中 / 完全无房型 / 有房型但当前条件不可订。 */}
         {!!loading && <View className='empty-box'><Text className='empty-title'>报价加载中...</Text></View>}
         {!loading && noRoomsAtAll && (
           <View className='empty-box'>
@@ -208,6 +228,7 @@ export default function RoomOffersPage() {
 
       {!!activeOffer && <View className='mask' onClick={() => setActiveOffer(null)} />}
       {!!activeOffer && (
+        // 价格详情用底部弹层而不是跳新页，减少用户在房型列表中的来回跳转。
         <View className='sheet'>
           <View className='sheet-head'>
             <Text>{activeOffer.room_name}</Text>
@@ -220,7 +241,7 @@ export default function RoomOffersPage() {
             </View>
             <View className='sheet-row'>
               <Text>入住晚数</Text>
-              <Text>{activeOffer.nights}晚</Text>
+              <Text>{activeOffer.nights ?? nights}晚</Text>
             </View>
             <View className='sheet-row'>
               <Text>房间数量</Text>

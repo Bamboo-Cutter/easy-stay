@@ -95,6 +95,14 @@ export default function HotelList() {
   const routeCheckOut = routeDates.checkOut
   const routeRooms = Number(params.rooms_count || 1)
   const routeAdults = Number(params.adults || 2)
+  const routeMinStar = Number(params.min_star)
+  const routeMaxStar = Number(params.max_star)
+  const routeBreakfast = params.breakfast === 'true' || params.breakfast === true
+  const routeRefundable = params.refundable === 'true' || params.refundable === true
+  const routeSelectedStars =
+    Number.isFinite(routeMinStar) && Number.isFinite(routeMaxStar) && routeMinStar >= 1 && routeMaxStar >= routeMinStar
+      ? Array.from({ length: routeMaxStar - routeMinStar + 1 }, (_, i) => routeMinStar + i)
+      : []
 
   const [hotelList, setHotelList] = useState([])
   const [page, setPage] = useState(1)
@@ -106,12 +114,12 @@ export default function HotelList() {
   const [sort, setSort] = useState('recommended')
   const [sheet, setSheet] = useState(null)
 
-  const [selectedStars, setSelectedStars] = useState([])
+  const [selectedStars, setSelectedStars] = useState(routeSelectedStars)
   const [minPrice, setMinPrice] = useState(centsToYuanText(params.min_price))
   const [maxPrice, setMaxPrice] = useState(centsToYuanText(params.max_price))
   const [minRating, setMinRating] = useState('')
-  const [breakfast, setBreakfast] = useState(false)
-  const [refundable, setRefundable] = useState(false)
+  const [breakfast, setBreakfast] = useState(routeBreakfast)
+  const [refundable, setRefundable] = useState(routeRefundable)
   const [nearbyType, setNearbyType] = useState('')
   const [nearbyKeyword, setNearbyKeyword] = useState('')
   const [nearbySort, setNearbySort] = useState('none')

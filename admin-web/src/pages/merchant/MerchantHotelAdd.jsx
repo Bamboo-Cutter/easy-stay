@@ -189,7 +189,7 @@ export default function MerchantHotelAdd() {
   //提交函数
   const handleSubmitDraft = async () => {
     try {
-      saveHotel("DRAFT");
+      await saveHotel("DRAFT");
       alert("酒店信息已保存为草稿");
 
       // const naurldr = user.role?.toLowerCase() === 'merchant'
@@ -206,7 +206,7 @@ export default function MerchantHotelAdd() {
   //提交函数
   const handleSubmit = async () => {
     try {
-      saveHotel("PENDING");
+      await saveHotel("PENDING");
       alert("酒店信息已提交，等待管理员审核");
 
       // const naurl = user.role?.toLowerCase() === 'merchant'

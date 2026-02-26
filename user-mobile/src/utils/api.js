@@ -71,6 +71,8 @@ async function request(method, path, { query, data, auth } = {}) {
 
 export const api = {
   getHotels: (query) => request('GET', '/hotels', { query }),
+  getFeatured: (city) => request('GET', '/hotels/featured', { query: { city } }),
+  getBanners: () => request('GET', '/hotels/banners'),
   getSuggestions: (keyword, city) => request('GET', '/hotels/suggestions', { query: { keyword, city } }),
   getFilterMetadata: (city) => request('GET', '/hotels/filter-metadata', { query: { city } }),
   getHotelDetail: (id, query) => request('GET', `/hotels/${id}`, { query }),
@@ -109,4 +111,3 @@ export const bookingStore = {
     return next
   },
 }
-

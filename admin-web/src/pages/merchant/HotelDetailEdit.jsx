@@ -210,48 +210,49 @@ export default function HotelDetailEdit() {
   
 
   const SaveHotel = async (status_str) => {
+    console.log(editableHotel,"准备提交")
     setHotel(editableHotel);
-    const token = localStorage.getItem("token");
+    const sumHotel = isEditing ? editableHotel : hotel 
 
     const submitData = {
-      name_cn: editableHotel.name_cn,
-      name_en: editableHotel.name_en,
-      address: editableHotel.address,
-      city: editableHotel.city,
-      star: Number(editableHotel.star),
-      type: editableHotel.type,
-      open_year: toISOString(editableHotel.open_year),
+      name_cn: sumHotel.name_cn,
+      name_en: sumHotel.name_en,
+      address: sumHotel.address,
+      city: sumHotel.city,
+      star: Number(sumHotel.star),
+      type: sumHotel.type,
+      open_year: sumHotel.open_year,
       status: status_str,
 
       // ✅ images
-      images: editableHotel.hotel_images?.map((img, index) => ({
-        url: img.url,
+      images: sumHotel.hotel_images?.map((img, index) => ({
+        url: img.url ?? img.image_url,
         sort: img.sort ?? index
       })),
 
       // ✅ tags
-      tags: editableHotel.hotel_tags?.map(tag => tag.tag),
+      tags: sumHotel.hotel_tags?.map(tag => tag.tag),
 
       // ✅ nearby_points
-      nearby_points: editableHotel.nearby_points?.map(point => ({
+      nearby_points: sumHotel.nearby_points?.map(point => ({
         type: point.type,
         name: point.name,
-        distance_km: point.distance_km
+        distance_km: Number(point.distance_km)
       })),
 
       // ✅ rooms
-      rooms: editableHotel.hotel_rooms?.map(room => ({
+      rooms: (sumHotel.rooms ?? sumHotel.hotel_rooms ?? [])?.map(room => ({
         name: room.name,
-        max_occupancy: room.max_occupancy,
-        total_rooms: room.total_rooms,
-        base_price: room.base_price,
+        max_occupancy: Number(room.max_occupancy),
+        total_rooms: Number(room.total_rooms),
+        base_price: Number(room.base_price),
         refundable: room.refundable,
         breakfast: room.breakfast
       }))
     };
 
     console.log("最终提交数据:", submitData);
-
+    const token = localStorage.getItem("token");
     await axios.patch(
       `/api/merchant/hotels/${hotelId}`,
       submitData,
@@ -269,7 +270,7 @@ export default function HotelDetailEdit() {
   //保存草稿
   const handleSaveDraft = async () => {
     try {
-      SaveHotel("DRAFT");
+      await SaveHotel("DRAFT");
       alert("草稿保存成功");
       window.history.back();  
     } catch (err) {
@@ -281,7 +282,7 @@ export default function HotelDetailEdit() {
   // 提交修改
   const handleSave = async () => {
     try {
-      SaveHotel("PENDING");
+      await SaveHotel("PENDING");
       alert("提交成功");
       window.history.back();  
     } catch (err) {
@@ -326,7 +327,7 @@ export default function HotelDetailEdit() {
           {isEditing ? (
             <input
               value={editableHotel["address"] || ""}
-              onChange={(e) => handleChange(field, e.target.value)}
+              onChange={(e) => handleChange("address", e.target.value)}
             />
           ) : (
             <div className="field-value">{showValue(hotel["address"])}</div>
@@ -375,7 +376,7 @@ export default function HotelDetailEdit() {
               <input
                 type="date"
                 value={formatDate(editableHotel.open_year) || ""}
-                onChange={(e) => handleChange("open_year", e.target.value)}
+                onChange={(e) => handleChange("open_year", toISOString(e.target.value))}
               />
             ) : (
               <div className="field-value-text">{showValue(formatDate(hotel.open_year))}</div>
@@ -432,7 +433,7 @@ export default function HotelDetailEdit() {
                 // 创建本地预览 URL
                 const previewUrl = URL.createObjectURL(file);
                 // 更新 editableHotel 中对应图片
-                handleArrayChange("hotel_images", index, "image_url", previewUrl);
+                handleArrayChange("hotel_images", index, "url", previewUrl);
                 // 可选择保存 file 对象到 state 以便上传给后端
                 handleArrayChange("hotel_images", index, "file", file);
               }}
@@ -440,9 +441,9 @@ export default function HotelDetailEdit() {
             {/* 删除按钮 */}
             <button onClick={() => handleArrayDelete("hotel_images", index)}>删除</button>
             {/* 图片预览 */}
-            {image.image_url && (
+            {(image.url || image.image_url) && (
                 <img
-                src={image.image_url}
+                src={image.url || image.image_url}
                 alt={`preview-${index}`}
                 className="hotel-image"
                 />
@@ -452,7 +453,7 @@ export default function HotelDetailEdit() {
         </div>
         <button
         onClick={() =>
-            handleArrayAdd("hotel_images", { image_url: "", file: null })
+            handleArrayAdd("hotel_images", { url: "", file: null })
         }>
         添加酒店图片
         </button>  
@@ -462,7 +463,7 @@ export default function HotelDetailEdit() {
           ? hotel.hotel_images.map((image, index) => (
               <div key={index} className="image-wrapper">
                 <img
-                  src={showValue(image.image_url)}
+                  src={showValue(image.url || image.image_url)}
                   alt={`hotel-${index}`}
                   className="hotel-image"
                 />
@@ -588,7 +589,7 @@ export default function HotelDetailEdit() {
                   placeholder="距离"
                 />
               </div>
-              <button onClick={() => handleArrayDelete("rooms", index)}>删除</button>
+              <button onClick={() => handleArrayDelete("nearby_points", index)}>删除</button>
               </div>
               ))}
               

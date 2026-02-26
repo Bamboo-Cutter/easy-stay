@@ -19,7 +19,12 @@ import { JwtStrategy } from './jwt.strategy';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => {
-        const secret = cfg.get<string>('JWT_SECRET') ?? 'dev_secret_change_me';
+        const configuredSecret = cfg.get<string>('JWT_SECRET');
+        const nodeEnv = cfg.get<string>('NODE_ENV') ?? 'development';
+        if (!configuredSecret && nodeEnv === 'production') {
+          throw new Error('JWT_SECRET is required in production');
+        }
+        const secret = configuredSecret ?? 'dev_secret_change_me';
         const expiresIn = (cfg.get<string>('JWT_EXPIRES_IN') ?? '7d') as StringValue; // 👈 关键
 
         return {

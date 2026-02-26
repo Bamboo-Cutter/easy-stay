@@ -20,6 +20,7 @@
   bottom: 0;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 8px 0 28px rgba(7, 13, 30, 0.22);
+  z-index: 1000;
 }
 
 .logo {

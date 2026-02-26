@@ -6,6 +6,8 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import * as bcrypt from 'bcrypt';
+import { user_role } from '@prisma/client';
 
 jest.setTimeout(120000);
 
@@ -18,7 +20,7 @@ describe('EasyStay API (e2e)', () => {
   // test data
   const merchantEmail = `merchant_${Date.now()}@test.com`;
   const adminEmail = `admin_${Date.now()}@test.com`;
-  const password = '123456';
+  const password = 'Test12345!';
 
   let merchantToken = '';
   let adminToken = '';
@@ -95,12 +97,21 @@ describe('EasyStay API (e2e)', () => {
     expect(me.body.role).toBe('MERCHANT');
   });
 
-  // 测试管理员认证流程：POST /auth/register + POST /auth/login + GET /auth/me
-  it('Auth: register admin + login', async () => {
+  // 测试管理员认证流程：前台注册应被拒绝；系统创建后可登录
+  it('Auth: admin public register blocked + login seeded admin', async () => {
     await base()
       .post('/auth/register')
       .send({ email: adminEmail, password, role: 'ADMIN' })
-      .expect(201);
+      .expect(400);
+
+    const adminHash = await bcrypt.hash(password, 10);
+    await prisma.users.create({
+      data: {
+        email: adminEmail,
+        password: adminHash,
+        role: user_role.ADMIN,
+      },
+    });
 
     const login = await base()
       .post('/auth/login')

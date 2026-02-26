@@ -5,6 +5,7 @@ import dayjs from 'dayjs'
 import { api } from '../../utils/api'
 import './index.css'
 
+// 给 check_out 默认值用：在 check_in 基础上 +1 天。
 function nextDay(iso) {
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) return iso
@@ -13,6 +14,7 @@ function nextDay(iso) {
   return d.toISOString()
 }
 
+// 路由参数兼容解码，防止编码异常导致页面白屏。
 function decodeParam(v) {
   if (!v) return ''
   try {
@@ -22,6 +24,7 @@ function decodeParam(v) {
   }
 }
 
+// 将 URL 中的日期参数统一成 ISO（当天 00:00），无效时回退到 fallback。
 function normalizeDateParam(v, fallback) {
   const raw = decodeParam(v)
   if (!raw) return fallback
@@ -30,6 +33,9 @@ function normalizeDateParam(v, fallback) {
   return d.startOf('day').toISOString()
 }
 
+// 防止非法日期组合进入后续查询：
+// - 入住不能是过去
+// - 离店必须晚于入住
 function ensureFutureStay(checkInIso, checkOutIso) {
   const today = dayjs().startOf('day')
   let inDay = dayjs(checkInIso)
@@ -42,6 +48,7 @@ function ensureFutureStay(checkInIso, checkOutIso) {
   }
 }
 
+// 日历弹层相关的小工具函数（按月构造网格/标题/翻月）。
 function toMonthKey(iso) {
   return dayjs(iso).format('YYYY-MM')
 }
@@ -73,6 +80,7 @@ function nextMonthKey(monthKey) {
 const clampInt = (v, min, max) => Math.max(min, Math.min(max, Number(v) || min))
 
 export default function HotelDetailPage() {
+  // 页面由酒店 ID + 查询条件驱动：日期、房间数、人数变化都会刷新“详情/报价/日历”。
   const router = Taro.getCurrentInstance().router
   const params = router?.params || {}
   const hotelId = params.id || ''
@@ -87,6 +95,7 @@ export default function HotelDetailPage() {
   const [checkIn, setCheckIn] = useState(initialCheckIn)
   const [checkOut, setCheckOut] = useState(initialCheckOut)
   const [roomsCount, setRoomsCount] = useState(Math.max(1, Number(params.rooms_count || 1)))
+  // detail/summary/calendar/offers 分别来自不同接口，便于接口失败时独立处理/替换。
   const [detail, setDetail] = useState(null)
   const [summary, setSummary] = useState(null)
   const [calendar, setCalendar] = useState(null)
@@ -97,38 +106,50 @@ export default function HotelDetailPage() {
   const [sheetCalendarLoading, setSheetCalendarLoading] = useState(false)
   const [tempCheckIn, setTempCheckIn] = useState(dayjs(initialCheckIn).format('YYYY-MM-DD'))
   const [tempCheckOut, setTempCheckOut] = useState(dayjs(initialCheckOut).format('YYYY-MM-DD'))
-  // const [adultCount] = useState(initialAdults)
+  const [offers, setOffers] = useState(null)
+  const [activeOffer, setActiveOffer] = useState(null)
+  const [adultCount, setAdultCount] = useState(initialAdults)
+  // baseData = 酒店基础详情（包含所有房型基础信息），用于“所有房型”区块展示。
   const [baseData, setBaseData] = useState(null)
 
+  // 主数据加载 effect：
+  // 同时拉酒店详情、评分摘要、月历、推荐报价、基础房型列表，避免页面分段闪烁。
   useEffect(() => {
-    console.log(api)
     if (!hotelId) return
     setLoading(true)
     Promise.all([
       api.getHotelDetail(hotelId, { check_in: checkIn, check_out: checkOut, rooms_count: roomsCount }),
       api.getReviewSummary(hotelId),
       api.getHotelCalendar(hotelId, dayjs(checkIn).format('YYYY-MM')),
+      api.getHotelOffers(hotelId, {
+        check_in: checkIn,
+        check_out: checkOut,
+        rooms_count: roomsCount,
+        adults: adultCount,
+      }),
       api.getHotelRooms(hotelId) // 新加的接口
     ])
     
-      .then(([d, s, c, baseInfo]) => {
+      .then(([d, s, c, offerData, baseInfo]) => {
         setDetail(d)
         setSummary(s)
         setCalendar(c)
-        // 关键点：将返回值存入状态
-        setBaseData(baseInfo);
-        console.log(baseData,'11')
+        setOffers(offerData)
+        // “所有房型”区块单独依赖基础详情接口，不与推荐报价混用。
+        setBaseData(baseInfo)
       })
       .catch((err) => Taro.showToast({ title: err.message || '加载失败', icon: 'none' }))
       .finally(() => setLoading(false))
-  }, [hotelId, checkIn, checkOut, roomsCount])
+  }, [hotelId, checkIn, checkOut, roomsCount, adultCount])
 
+  // 动态设置导航栏标题，用户在详情页停留时能看到当前酒店名。
   useEffect(() => {
     if (detail?.name_cn) {
-      Taro.setNavigationBarTitle({ title: detail.name_cn });
+      Taro.setNavigationBarTitle({ title: detail.name_cn })
     }
-  }, [detail]);
+  }, [detail])
 
+  // 只有打开日期弹层时才请求该月日历，避免平时重复拉无用数据。
   useEffect(() => {
     if (!showCalendarSheet || !hotelId || !sheetMonth) return
     setSheetCalendarLoading(true)
@@ -138,11 +159,13 @@ export default function HotelDetailPage() {
       .finally(() => setSheetCalendarLoading(false))
   }, [showCalendarSheet, hotelId, sheetMonth])
 
+  // 酒店主图：优先后端 hotel_images，没有则用占位图兜底。
   const images = useMemo(
     () => (detail?.hotel_images?.length ? detail.hotel_images : [{ url: 'https://picsum.photos/seed/hotel-detail-fallback/1200/800' }]),
     [detail],
   )
 
+  // 页面展示所需的派生状态（评分、晚数、日历映射等）统一集中在这里。
   const rating = Number(summary?.rating ?? detail?.review_summary?.rating ?? 0).toFixed(1)
   const reviewCount = summary?.review_count ?? detail?.review_summary?.review_count ?? 0
   const nights = Math.max(dayjs(checkOut).diff(dayjs(checkIn), 'day'), 1)
@@ -155,6 +178,7 @@ export default function HotelDetailPage() {
   }, [sheetCalendar])
   const gridCells = useMemo(() => monthGrid(sheetMonth), [sheetMonth])
 
+  // 打开日历弹层时，把“当前已选日期”复制到临时状态，用户取消时不污染主状态。
   const openCalendarSheet = () => {
     setTempCheckIn(dayjs(checkIn).format('YYYY-MM-DD'))
     setTempCheckOut(dayjs(checkOut).format('YYYY-MM-DD'))
@@ -164,6 +188,7 @@ export default function HotelDetailPage() {
 
   const onPickDate = (dateStr) => {
     if (!dateStr) return
+    // 第一次点：选入住；第二次点：若在入住之后则选离店，否则重置入住。
     const noStartOrRangeDone = !tempCheckIn || (tempCheckIn && tempCheckOut)
     if (noStartOrRangeDone) {
       setTempCheckIn(dateStr)
@@ -187,19 +212,7 @@ export default function HotelDetailPage() {
     setCheckOut(`${tempCheckOut}T00:00:00.000Z`)
     setShowCalendarSheet(false)
   }
-
-
-
-  //rooms-pages
-  const fallbackCheckIn = dayjs().startOf('day').toISOString()
-  const normalizedStay = ensureFutureStay(
-    normalizeDateParam(params.check_in, fallbackCheckIn),
-    normalizeDateParam(params.check_out, dayjs(fallbackCheckIn).add(1, 'day').toISOString()),
-  )
-  const initialRoomsCount = clampInt(params.rooms_count || 1, 1, 6)
-  const [offers, setOffers] = useState(null)
-  const [activeOffer, setActiveOffer] = useState(null)
-  const [adultCount, setAdultCount] = useState(initialAdults)
+  // 下面是“推荐房型”区块的派生列表（与 roomOffers 页保持同一套分组逻辑）。
   const guestCount = adultCount
   const items = offers?.items || []
   const bookableItems = useMemo(() => items.filter((x) => x.is_bookable), [items])
@@ -213,6 +226,8 @@ export default function HotelDetailPage() {
   )
   const noBookable = !loading && bookableItems.length === 0
   const noRoomsAtAll = !loading && items.length === 0
+
+  // 推荐房型卡片渲染（与 roomOffers 页相似，但在详情页里作为嵌入区块出现）。
   const renderOfferCard = (item, muted = false) => {
     const reasonText = item.availability_status === 'PAST_DATE'
       ? '入住日期已过，请重新选择日期'
@@ -236,19 +251,20 @@ export default function HotelDetailPage() {
             <View className='offer-right'>
               <Text className='offer-price'>¥{Math.round((item.total_price || 0) / 100)}</Text>
               <Button
-                className='book-btn'
-                disabled={!item.is_bookable}
+                className='book-btn' 
+                // disabled={!item.is_bookable}
+                // 进入预订页时，把当前详情页的筛选条件完整带过去。
                 onClick={() =>
                   Taro.navigateTo({
                     url: `/pages/booking/index?hotelId=${hotelId}&roomId=${item.room_id}&check_in=${encodeURIComponent(checkIn)}&check_out=${encodeURIComponent(checkOut)}&rooms_count=${roomsCount}&total_price=${item.total_price}&guest_count=${guestCount}`,
                   })
                 }
-              >
-                {item.is_bookable
+              >预订
+                {/* {item.is_bookable
                   ? '预订'
                   : item.availability_status === 'PAST_DATE'
                     ? '日期已过'
-                    : (!item.capacity_fit ? '人数不符' : '已满房')}
+                    : (!item.capacity_fit ? '人数不符' : '已满房')} */}
               </Button>
             </View>
           </View>
@@ -267,7 +283,6 @@ export default function HotelDetailPage() {
       </View>
 
       <ScrollView scrollY className='detail-scroll'>
-        
         <View className='banner'>
         <Swiper indicatorDots autoplay circular className='detail-swiper'>
           {images.map((img, idx) => (
@@ -297,6 +312,7 @@ export default function HotelDetailPage() {
 
         <View className='detail-card'>
           <Text className='section-title'>入住信息-推荐房型</Text>
+          {/* 点击条打开日历弹层：修改日期后会触发整个详情页重新拉推荐报价。 */}
           <View className='booking-strip clickable' onClick={openCalendarSheet}>
             <View className='strip-main'>
               <Text>{dayjs(checkIn).format('MM/DD')} - {dayjs(checkOut).format('MM/DD')} · {nights}晚</Text>
@@ -307,6 +323,7 @@ export default function HotelDetailPage() {
           {!!calendar?.days?.length && (
             <View className='calendar-chip-row'>
               {calendar.days
+                // 这里只展示未来可订且有最低价的数据点，作为“快捷选日入口”。
                 .filter((d) => d?.is_available && d?.min_price !== null && !dayjs(d.date).isBefore(dayjs(todayDateKey), 'day'))
                 .slice(0, 6)
                 .map((d) => (
@@ -357,28 +374,28 @@ export default function HotelDetailPage() {
             )}
             {!loading && noBookable && items.length > 0 && (
               <View className='empty-box'>
-                <Text className='empty-title'>当前条件下暂无可订房型</Text>
-                <Text className='empty-sub'>请尝试减少人数、增加房间数，或更换日期。下面保留了不可用房型以供参考。</Text>
+                <Text className='empty-title'>当前条件下暂无推荐房型</Text>
+                <Text className='empty-sub'>请尝试减少人数、增加房间数，或更换日期。下面保留了其他房型以供参考。</Text>
               </View>
             )}
 
             {!!bookableItems.length && (
               <View className='group-wrap'>
-                <Text className='group-title'>可订房型</Text>
+                <Text className='group-title'>推荐房型</Text>
                 {bookableItems.map((item) => renderOfferCard(item, false))}
               </View>
             )}
 
             {!!soldOutItems.length && (
               <View className='group-wrap'>
-                <Text className='group-title muted'>不可用房型（已满房）</Text>
+                <Text className='group-title muted'>其他房型（已满房）</Text>
                 {soldOutItems.map((item) => renderOfferCard(item, true))}
               </View>
             )}
 
             {!!capacityMismatchItems.length && (
               <View className='group-wrap'>
-                <Text className='group-title muted'>不可用房型（人数不符合）</Text>
+                <Text className='group-title muted'>其他房型（人数不符合）</Text>
                 {capacityMismatchItems.map((item) => renderOfferCard(item, true))}
               </View>
             )}
@@ -426,41 +443,7 @@ export default function HotelDetailPage() {
             </View>
           )}
         </View>
-
-
-        <View className='detail-card'>
-          <Text className='section-title'>所有房型</Text>
-          {baseData?.rooms?.map((item) => {
-            console.log(baseData.rooms)
-            // 逻辑判断：如果不可预订，则应用置灰样式
-            const muted = !item.is_bookable;
-            // 逻辑判断：如果有特定的文案提示（比如：还剩2间）
-            const reasonText = item.available_rooms <= 3 ? `火爆：仅剩${item.available_rooms}间` : '';
-            console.log(item,'3333')
-            return (
-              <View key={item.id} className={`offer-card ${muted ? 'offer-card-muted' : ''}`}>
-                <Image className='offer-cover' src={`https://picsum.photos/seed/${item.room_id}/480/320`} mode='aspectFill' />
-                <View className='offer-body'>
-                  <Text className='offer-name'>{item.name}</Text>
-                  <Text className='offer-meta'>
-                    最多{item.max_occupancy}人 · {item.breakfast ? '含早餐' : '不含早餐'} · {item.refundable ? '可退款' : '不可退款'}
-                  </Text>
-                  {/* <Text className='offer-meta'>剩余 {item.available_rooms} 间</Text> */}
-                  {/* {!!reasonText && <Text className='offer-reason'>{reasonText}</Text>} */}
-                  <View className='offer-actions'>
-                    <Text className='link-text'>基础价格</Text>
-                    <View className='offer-right'>
-                      <Text className='offer-price'>¥{Math.round((item.base_price || 0) / 100)}</Text>
-                    </View>
-                  </View>
-                </View>
-              </View>);
-            })}
-          {/* 无数据时的展示 */}
-          {baseData?.rooms?.length === 0 && (
-            <View className='empty-tip'>暂无可用房型，请更换日期尝试</View>
-          )}
-        </View>
+        
         <View className='detail-card'>
           <Text className='section-title'>附近地点</Text>
           {(detail?.nearby_points || []).slice(0, 12).map((p, idx) => (
@@ -475,6 +458,7 @@ export default function HotelDetailPage() {
 
       {showCalendarSheet && (
         <View className='detail-mask' onClick={() => setShowCalendarSheet(false)}>
+          {/* 阻止点击弹层内容时冒泡关闭；只允许点击遮罩关闭。 */}
           <View className='detail-sheet' onClick={(e) => e.stopPropagation()}>
             <View className='sheet-top'>
               <Text className='sheet-close' onClick={() => setShowCalendarSheet(false)}>关闭</Text>
@@ -498,6 +482,7 @@ export default function HotelDetailPage() {
               {gridCells.map((dateStr, idx) => {
                 if (!dateStr) return <View key={`blank-${idx}`} className='sheet-day blank' />
                 const dayInfo = calendarPriceMap.get(dateStr)
+                // 禁用规则统一收敛在这里，渲染层只关心最终 className。
                 const isPast = dayjs(dateStr).isBefore(dayjs(todayDateKey), 'day')
                 const isDisabledByRange = tempCheckIn && !tempCheckOut && dayjs(dateStr).isBefore(dayjs(tempCheckIn), 'day')
                 const isSelected = dateStr === tempCheckIn || dateStr === tempCheckOut

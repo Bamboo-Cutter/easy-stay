@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: "/api",
 });
 
 // 自动带 token
@@ -20,4 +20,3 @@ export const getMe = () =>
   api.get("/auth/me");
 
 export const register = (data) => api.post("/auth/register", data);
-

@@ -77,7 +77,10 @@ export default function HotelDetailView() {
       const token = localStorage.getItem("token");
       await axios.patch(
         `/api/admin/hotels/${id}/status`,
-        { status: newStatus },
+        {
+          status: newStatus,
+          ...(newStatus === "REJECTED" ? { reason: rejectReason.trim() } : {}),
+        },
         {
           params: { merchant_id: merchantId },
           headers: {
@@ -85,18 +88,6 @@ export default function HotelDetailView() {
           }
         }
       );
-      if (!rejectReason && newStatus==="REJECTED") {
-        const token = localStorage.getItem("token");
-        await axios.post(
-          `/api/admin/hotels/${id}/reject`,
-          { reject_reason: rejectReason },
-          {
-            params: { merchant_id: merchantId },
-            headers: {
-              Authorization: `Bearer ${token}`,
-            }
-          });
-      }
       console.log(newStatus);
       if (newStatus === "APPROVED") { alert("上线成功");}
       else if (newStatus === "REJECTED") { alert("退回成功");}
@@ -171,7 +162,7 @@ export default function HotelDetailView() {
         ? hotel.hotel_images.map((image, index) => (
             <div key={index} className="image-wrapper">
               <img
-                src={showValue(image.image_url)}
+                src={showValue(image.url || image.image_url)}
                 alt={`hotel-${index}`}
                 className="hotel-image"
               />

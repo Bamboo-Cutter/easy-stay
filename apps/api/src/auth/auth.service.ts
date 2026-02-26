@@ -66,10 +66,6 @@ export class AuthService {
   // 创建用户并写入加密密码
   async register(dto: RegisterDto, ip?: string) {
     this.checkRateLimit('register', dto.email, ip);
-    if (dto.role === user_role.ADMIN) {
-      this.recordAttempt('register', dto.email, ip, false);
-      throw new BadRequestException('当前不支持前台注册管理员账号');
-    }
     const exists = await this.prisma.users.findUnique({ where: { email: dto.email } });
     if (exists) {
       this.recordAttempt('register', dto.email, ip, false);

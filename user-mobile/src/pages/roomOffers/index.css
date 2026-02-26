@@ -31,7 +31,7 @@
 .offer-price { color:#f04438; font-size:30rpx; font-weight:800; }
 .book-btn { height:64rpx; line-height:64rpx; border-radius:12rpx; background:linear-gradient(90deg,#145dff,#4385ff); color:#fff; font-size:22rpx; padding:0 20rpx; }
 .book-btn::after { border:none; }
-.book-btn[disabled] { background:#eef2f6; color:#98a2b3; }
+.book-btn[disabled] { background:linear-gradient(90deg,#145dff,#4385ff); color:#fff; opacity:.45; }
 .mask { position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:999; }
 .sheet { position:fixed; left:0; right:0; bottom:0; background:#fff; border-radius:24rpx 24rpx 0 0; z-index:1000; padding-bottom: env(safe-area-inset-bottom); }
 .sheet-head { display:flex; justify-content:space-between; align-items:center; padding:20rpx; border-bottom:1px solid #eef2f6; font-size:26rpx; font-weight:700; }

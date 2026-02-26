@@ -27,8 +27,8 @@ export class HotelsController {
 
   // 首页推荐酒店
   @Get('featured')
-  featured() {
-    return this.hotels.featured();
+  featured(@Query('city') city?: string) {
+    return this.hotels.featured(city);
   }
 
   // 首页 Banner（广告位）

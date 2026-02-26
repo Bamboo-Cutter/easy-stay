@@ -2,14 +2,14 @@ import { useState } from "react";
 import "./login.css";
 import { login } from "@/api/auth";
 import { useNavigate } from "react-router-dom";
-
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 64;
-const PASSWORD_POLICY_TEXT = "密码需8-64位，包含大小写字母、数字和特殊字符";
-const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])\S+$/;
-
-const normalizeEmail = (value) => String(value ?? "").trim().toLowerCase().slice(0, 100);
-const normalizePassword = (value) => String(value ?? "").slice(0, PASSWORD_MAX_LENGTH);
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_REGEX,
+  PASSWORD_POLICY_TEXT,
+  normalizeEmail,
+  normalizePassword,
+} from "@/auth/passwordPolicy";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -18,25 +18,6 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-
-  // const handleLogin1 = () => {
-  //   if (account === "19822765021" && password === "12060711") {
-  //     localStorage.setItem("role", "merchant");
-  //     localStorage.setItem("account", account);
-  //     navigate("/home-merchant");
-  //     return;
-  //   }
-
-  //   if (account === "admin123" && password === "123") {
-  //     localStorage.setItem("role", "admin");
-  //     localStorage.setItem("account", account);
-  //     navigate("/home-admin");
-  //     return;
-  //   }
-  //   alert("账号或密码错误！");
-  // };
-
-// 点击登录
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -67,8 +48,7 @@ export default function Login() {
       /*** ② 保存 token（关键！）* 页面刷新不丢登录态，全靠它*/
       localStorage.setItem("token", token);
       /**③ 登录成功，跳转到首页,首页会自动走 /auth/me 判断角色*/
-      console.log(token)
-      if(token==null) {
+      if (token == null) {
         setError("登录失败");
         return;
       }
@@ -87,7 +67,7 @@ export default function Login() {
       <form onSubmit={handleLogin}>
       <input
         type="text"
-        placeholder="账号"
+        placeholder="邮箱"
         value={email}
         autoComplete="username"
         maxLength={100}

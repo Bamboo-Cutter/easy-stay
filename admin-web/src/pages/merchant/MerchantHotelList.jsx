@@ -37,7 +37,7 @@ export default function MerchantHotelList() {
           },
         });
         setHotels(res.data);
-        // console.log(res.data)
+        console.log(res.data)
       } catch (err) {
         console.error("获取酒店列表失败:", err);
       } finally {

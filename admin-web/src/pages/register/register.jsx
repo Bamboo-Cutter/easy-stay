@@ -2,21 +2,14 @@ import { useState } from "react";
 import "./register.css";
 import { useNavigate } from "react-router-dom";
 import { register } from "@/api/auth";
-
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 64;
-const PASSWORD_POLICY_TEXT = "密码需8-64位，包含大小写字母、数字和特殊字符";
-const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d])\S+$/;
-
-const normalizeEmail = (value) => String(value ?? "").trim().toLowerCase().slice(0, 100);
-const normalizePassword = (value) => String(value ?? "").slice(0, PASSWORD_MAX_LENGTH);
-
-// export default function Register() {
-//   const [form, setForm] = useState({
-//     username: "",
-//     password: "",
-//     role: "merchant"
-//   });
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_REGEX,
+  PASSWORD_POLICY_TEXT,
+  normalizeEmail,
+  normalizePassword,
+} from "@/auth/passwordPolicy";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -73,23 +66,6 @@ export default function Register() {
     }
   };
 
-  // const handleChange = (e) => {
-  //   setForm({
-  //     ...form,
-  //     [e.target.name]: e.target.value
-  //   });
-  // };
-
-  // const handleRegister = () => {
-  //   if (!form.username || !form.password) {
-  //     alert("请填写完整信息");
-  //     return;
-  //   }
-
-  //   console.log("注册信息：", form);
-  //   alert("注册成功（模拟）");
-  // };
-
   return (
     <div className="register-container">
       <div className="register-box">
@@ -141,9 +117,19 @@ export default function Register() {
             />
             商户
           </label>
+          <label>
+            <input
+              type="radio"
+              name="role"
+              value="ADMIN"
+              checked={role === "ADMIN"}
+              onChange={(e) => setRole(e.target.value)}
+            />
+            管理员
+          </label>
         </div>
         <div style={{ color: "#667085", marginTop: 8, fontSize: 12 }}>
-          管理员账号请由系统内部创建，不支持公开注册。
+          演示环境支持商户/管理员角色注册，登录后会按账号角色自动进入对应后台。
         </div>
 
         {error && (
